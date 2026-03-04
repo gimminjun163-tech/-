@@ -1,0 +1,4029 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>삼국지 - 천하통일</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&family=Noto+Sans+KR:wght@300;400;700&display=swap');
+
+:root {
+  --gold: #c9a84c;
+  --dark-gold: #8b6914;
+  --red: #8b1a1a;
+  --dark-red: #5c0a0a;
+  --bg-dark: #0a0a0f;
+  --bg-panel: #12100e;
+  --bg-card: #1a1710;
+  --border: #3a2e1a;
+  --text: #e8d5a0;
+  --text-dim: #8a7050;
+  --green: #2d6e2d;
+  --blue: #1a3a6e;
+  --teal: #1a5a5a;
+  --purple: #4a1a6e;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg-dark);
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  overflow: hidden;
+  height: 100vh;
+  background-image: 
+    radial-gradient(ellipse at 20% 50%, rgba(139,26,26,0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(201,168,76,0.05) 0%, transparent 50%);
+}
+
+/* TITLE SCREEN */
+#titleScreen {
+  position: fixed; inset: 0;
+  background: #0a0a0f;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 1000;
+  background-image: 
+    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c9a84c' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.title-main {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 72px;
+  font-weight: 900;
+  color: var(--gold);
+  text-shadow: 0 0 40px rgba(201,168,76,0.5), 0 0 80px rgba(201,168,76,0.2);
+  letter-spacing: 20px;
+  animation: titlePulse 3s ease-in-out infinite;
+}
+
+@keyframes titlePulse {
+  0%,100% { text-shadow: 0 0 40px rgba(201,168,76,0.5); }
+  50% { text-shadow: 0 0 60px rgba(201,168,76,0.8), 0 0 100px rgba(201,168,76,0.4); }
+}
+
+.title-sub {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 24px;
+  color: var(--text-dim);
+  letter-spacing: 8px;
+  margin-top: 10px;
+}
+
+.title-divider {
+  width: 400px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  margin: 30px 0;
+}
+
+.scenario-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 500px;
+  margin-bottom: 20px;
+}
+
+.scenario-btn {
+  background: rgba(201,168,76,0.05);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 14px 20px;
+  cursor: pointer;
+  font-family: 'Noto Serif KR', serif;
+  font-size: 14px;
+  text-align: left;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.scenario-btn:hover {
+  background: rgba(201,168,76,0.15);
+  border-color: var(--gold);
+  transform: translateX(5px);
+}
+
+.scenario-year {
+  color: var(--gold);
+  font-size: 12px;
+  min-width: 60px;
+}
+
+/* MAIN GAME LAYOUT */
+#gameScreen {
+  display: none;
+  height: 100vh;
+  grid-template-columns: 220px 1fr 240px;
+  grid-template-rows: 40px 1fr 160px;
+  gap: 2px;
+  background: #050505;
+  padding: 2px;
+}
+
+#gameScreen.active {
+  display: grid;
+}
+
+/* TOP BAR */
+#topBar {
+  grid-column: 1/-1;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  gap: 15px;
+}
+
+.stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(0,0,0,0.3);
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.stat-chip .label { color: var(--text-dim); }
+.stat-chip .val { color: var(--gold); font-weight: 700; }
+
+#dateDisplay {
+  font-family: 'Noto Serif KR', serif;
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 700;
+  margin-left: auto;
+}
+
+.top-btn {
+  background: rgba(139,26,26,0.3);
+  border: 1px solid var(--red);
+  color: var(--text);
+  padding: 3px 10px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.2s;
+}
+
+.top-btn:hover { background: rgba(139,26,26,0.6); }
+.top-btn.gold { background: rgba(201,168,76,0.2); border-color: var(--gold); }
+.top-btn.gold:hover { background: rgba(201,168,76,0.4); }
+
+/* LEFT PANEL */
+#leftPanel {
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-title {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 13px;
+  color: var(--gold);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* MAP */
+#mapContainer {
+  background: var(--bg-dark);
+  position: relative;
+  overflow: hidden;
+}
+
+#mapSvg {
+  width: 100%;
+  height: 100%;
+  cursor: default;
+}
+
+.city-node {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.city-node:hover .city-circle {
+  filter: brightness(1.5);
+}
+
+.city-circle {
+  transition: all 0.2s;
+}
+
+.city-label {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 9px;
+  fill: #fff;
+  text-anchor: middle;
+  pointer-events: none;
+  text-shadow: 0 0 3px #000;
+}
+
+.city-troops {
+  font-size: 7px;
+  fill: #ffd700;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.attack-arrow {
+  stroke-width: 2;
+  fill: none;
+  stroke-dasharray: 5,3;
+  animation: dashMove 1s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes dashMove {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -16; }
+}
+
+.route-line {
+  stroke: var(--gold);
+  stroke-width: 1;
+  stroke-dasharray: 4,3;
+  fill: none;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* RIGHT PANEL */
+#rightPanel {
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* BOTTOM LOG */
+#bottomLog {
+  grid-column: 1/-1;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 2px;
+}
+
+#eventLog {
+  flex: 1;
+  overflow-y: auto;
+  padding: 5px 10px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+#eventLog .log-entry {
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(58,46,26,0.3);
+  display: flex;
+  gap: 8px;
+}
+
+.log-date { color: var(--text-dim); min-width: 70px; }
+.log-msg { color: var(--text); }
+.log-msg.combat { color: #ff6b6b; }
+.log-msg.diplo { color: #6bb5ff; }
+.log-msg.event { color: #ffd700; }
+.log-msg.warning { color: #ff9900; }
+.log-msg.success { color: #6bff6b; }
+
+#actionPanel {
+  width: 200px;
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.action-btn {
+  background: rgba(201,168,76,0.1);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 11px;
+  text-align: left;
+  transition: all 0.2s;
+  font-family: 'Noto Sans KR', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.action-btn:hover:not(:disabled) {
+  background: rgba(201,168,76,0.25);
+  border-color: var(--gold);
+}
+
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.action-btn.danger {
+  background: rgba(139,26,26,0.2);
+  border-color: var(--red);
+}
+
+.action-btn.danger:hover:not(:disabled) {
+  background: rgba(139,26,26,0.5);
+}
+
+.action-btn .btn-icon { font-size: 13px; }
+
+/* CITY INFO */
+.city-info-box {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.city-info-name {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 16px;
+  color: var(--gold);
+  margin-bottom: 5px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+  font-size: 11px;
+  border-bottom: 1px solid rgba(58,46,26,0.2);
+}
+
+.info-row .lbl { color: var(--text-dim); }
+.info-row .val { color: var(--text); }
+.info-row .val.good { color: #6bff6b; }
+.info-row .val.bad { color: #ff6b6b; }
+.info-row .val.warn { color: #ffd700; }
+
+/* GENERAL CARD */
+.general-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  margin: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.general-card:hover {
+  border-color: var(--gold);
+  background: rgba(201,168,76,0.08);
+}
+
+.general-card.selected {
+  border-color: var(--gold);
+  background: rgba(201,168,76,0.15);
+}
+
+.gen-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.gen-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.gen-name {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 13px;
+  color: var(--gold);
+}
+
+.gen-role {
+  font-size: 10px;
+  color: var(--text-dim);
+  background: rgba(0,0,0,0.3);
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+}
+
+.gen-stats {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 2px;
+  font-size: 10px;
+}
+
+.stat-box {
+  text-align: center;
+  background: rgba(0,0,0,0.3);
+  padding: 2px;
+}
+
+.stat-box .s-label { color: var(--text-dim); font-size: 9px; }
+.stat-box .s-val { color: var(--gold); font-weight: 700; }
+
+.gen-loyalty {
+  margin-top: 3px;
+  height: 3px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.gen-loyalty-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s;
+}
+
+/* MODAL */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-box {
+  background: var(--bg-panel);
+  border: 1px solid var(--gold);
+  min-width: 420px;
+  max-width: 700px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 0 40px rgba(201,168,76,0.2);
+}
+
+.modal-header {
+  background: rgba(201,168,76,0.1);
+  padding: 10px 15px;
+  font-family: 'Noto Serif KR', serif;
+  font-size: 16px;
+  color: var(--gold);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-close {
+  cursor: pointer;
+  color: var(--text-dim);
+  font-size: 18px;
+  transition: color 0.2s;
+}
+
+.modal-close:hover { color: var(--red); }
+
+.modal-body {
+  padding: 15px;
+}
+
+.modal-footer {
+  padding: 10px 15px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.btn {
+  padding: 6px 16px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: 'Noto Sans KR', sans-serif;
+  transition: all 0.2s;
+  border: 1px solid;
+}
+
+.btn-primary {
+  background: rgba(139,26,26,0.6);
+  border-color: var(--red);
+  color: var(--text);
+}
+
+.btn-primary:hover { background: rgba(139,26,26,0.9); }
+
+.btn-gold {
+  background: rgba(201,168,76,0.2);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.btn-gold:hover { background: rgba(201,168,76,0.4); }
+
+.btn-gray {
+  background: rgba(100,100,100,0.2);
+  border-color: #555;
+  color: var(--text-dim);
+}
+
+.btn-gray:hover { background: rgba(100,100,100,0.4); }
+
+/* SLIDERS */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--border);
+  outline: none;
+  border-radius: 2px;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--gold);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+input[type=number], input[type=text], select {
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 4px 8px;
+  font-size: 12px;
+  font-family: 'Noto Sans KR', sans-serif;
+  outline: none;
+}
+
+input[type=number]:focus, input[type=text]:focus, select:focus {
+  border-color: var(--gold);
+}
+
+select option {
+  background: var(--bg-dark);
+}
+
+/* TABS */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 6px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.2s;
+  border-bottom: 2px solid transparent;
+}
+
+.tab-btn.active {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+  background: rgba(201,168,76,0.05);
+}
+
+/* PROGRESS BARS */
+.prog-bar {
+  height: 6px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 2px 0;
+}
+
+.prog-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s;
+}
+
+/* NOTIFICATION */
+.notification {
+  position: fixed;
+  top: 50px;
+  right: 20px;
+  background: var(--bg-panel);
+  border: 1px solid var(--gold);
+  padding: 10px 15px;
+  z-index: 600;
+  min-width: 250px;
+  font-size: 12px;
+  animation: slideIn 0.3s ease;
+  box-shadow: 0 0 20px rgba(201,168,76,0.3);
+}
+
+.notification.danger { border-color: var(--red); box-shadow: 0 0 20px rgba(139,26,26,0.3); }
+.notification.success { border-color: #2d6e2d; box-shadow: 0 0 20px rgba(45,110,45,0.3); }
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-dark); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--dark-gold); }
+
+/* TOOLTIP */
+.tooltip {
+  position: absolute;
+  background: var(--bg-panel);
+  border: 1px solid var(--gold);
+  padding: 6px 10px;
+  font-size: 11px;
+  z-index: 700;
+  pointer-events: none;
+  max-width: 200px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.8);
+}
+
+/* FACTION COLORS */
+.faction-wei { fill: #1a3a6e; stroke: #4a7ace; }
+.faction-shu { fill: #1a5a2a; stroke: #4ace6a; }
+.faction-wu { fill: #6e1a1a; stroke: #ce4a4a; }
+.faction-han { fill: #5a5a1a; stroke: #cece4a; }
+.faction-neutral { fill: #2a2a2a; stroke: #6a6a6a; }
+.faction-yellow { fill: #5a3a1a; stroke: #ce8a4a; }
+.faction-dong { fill: #4a1a5a; stroke: #9a4ace; }
+.faction-player { fill: #4a1a1a; stroke: #ce4a4a; }
+
+.fc-wei { color: #4a7ace; }
+.fc-shu { color: #4ace6a; }
+.fc-wu { color: #ce4a4a; }
+.fc-han { color: #cece4a; }
+.fc-neutral { color: #aaaaaa; }
+
+/* WEATHER DISPLAY */
+#weatherDisplay {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  font-size: 20px;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* SEASON INDICATOR */
+#seasonDisplay {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  font-size: 10px;
+  color: var(--gold);
+  background: rgba(0,0,0,0.6);
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  pointer-events: none;
+}
+
+/* ARMY MOVEMENT INDICATOR */
+.army-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--red);
+  border: 2px solid #fff;
+  pointer-events: none;
+  transition: all 2s linear;
+  z-index: 10;
+}
+
+/* GRID LINES ON MAP */
+.map-grid {
+  stroke: rgba(201,168,76,0.05);
+  stroke-width: 0.5;
+}
+
+.territory-region {
+  opacity: 0.3;
+  transition: opacity 0.3s;
+}
+
+.territory-region:hover {
+  opacity: 0.5;
+}
+
+/* BATTLE ANIMATION */
+@keyframes battleFlash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.in-battle {
+  animation: battleFlash 0.5s ease infinite;
+}
+
+/* FATIGUE BAR */
+.fatigue-bar {
+  height: 3px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.fatigue-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #ff6b00, #ff0000);
+  transition: width 0.3s;
+}
+
+/* CHAR SELECT */
+.char-select-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.char-select-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.char-select-card:hover, .char-select-card.selected {
+  border-color: var(--gold);
+  background: rgba(201,168,76,0.1);
+}
+
+.char-select-card .avatar { font-size: 24px; margin-bottom: 4px; }
+.char-select-card .cname { font-family: 'Noto Serif KR', serif; font-size: 12px; color: var(--gold); }
+.char-select-card .cfaction { font-size: 10px; color: var(--text-dim); }
+
+/* DIPLOMACY TABLE */
+.diplo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.diplo-table th {
+  background: rgba(0,0,0,0.3);
+  padding: 5px 8px;
+  color: var(--gold);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.diplo-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid rgba(58,46,26,0.2);
+}
+
+.rel-allied { color: #4ace6a; }
+.rel-neutral { color: #cece4a; }
+.rel-hostile { color: #ce4a4a; }
+.rel-vassal { color: #4a7ace; }
+
+/* MINI MAP */
+#miniMap {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  width: 120px;
+  height: 80px;
+  background: rgba(0,0,0,0.7);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* HOVER INFO */
+#hoverInfo {
+  position: absolute;
+  background: var(--bg-panel);
+  border: 1px solid var(--gold);
+  padding: 8px 12px;
+  font-size: 11px;
+  z-index: 400;
+  pointer-events: none;
+  display: none;
+  min-width: 160px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.8);
+}
+
+/* LOADING */
+.loading-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.9);
+  z-index: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* BATTLE LOG */
+.battle-log-entry {
+  padding: 3px 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.battle-log-entry.hit { color: #ff6b6b; }
+.battle-log-entry.miss { color: #888; }
+.battle-log-entry.tactic { color: #ffd700; }
+.battle-log-entry.morale { color: #6bb5ff; }
+
+/* CHARACTER PORTRAIT FRAME */
+.portrait-frame {
+  width: 50px;
+  height: 50px;
+  border: 2px solid var(--gold);
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.portrait-frame::before, .portrait-frame::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--gold);
+}
+
+.portrait-frame::before { top: -3px; left: -3px; border-right: none; border-bottom: none; }
+.portrait-frame::after { bottom: -3px; right: -3px; border-left: none; border-top: none; }
+
+/* TURN INDICATOR */
+#turnIndicator {
+  position: fixed;
+  bottom: 170px;
+  right: 20px;
+  background: var(--bg-panel);
+  border: 1px solid var(--gold);
+  padding: 5px 15px;
+  font-family: 'Noto Serif KR', serif;
+  font-size: 12px;
+  color: var(--gold);
+  z-index: 100;
+  pointer-events: none;
+}
+
+/* SELECTED CITY HIGHLIGHT */
+.city-selected circle {
+  filter: drop-shadow(0 0 8px var(--gold));
+}
+
+/* ARMY LABEL */
+.army-label {
+  font-size: 8px;
+  fill: white;
+  text-anchor: middle;
+  font-weight: bold;
+  pointer-events: none;
+  text-shadow: 0 0 3px black;
+}
+
+/* REGION BORDER */
+.region-border {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-dasharray: none;
+}
+
+/* HEADER DECORATION */
+.panel-title::before {
+  content: '◆';
+  color: var(--dark-gold);
+  font-size: 8px;
+  margin-right: 5px;
+}
+
+/* TABS IN RIGHT PANEL */
+.right-tab-content {
+  display: none;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.right-tab-content.active {
+  display: block;
+}
+
+/* EVENT BANNER */
+.event-banner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--bg-panel);
+  border: 2px solid var(--gold);
+  padding: 30px 40px;
+  z-index: 600;
+  text-align: center;
+  min-width: 400px;
+  max-width: 600px;
+  box-shadow: 0 0 60px rgba(201,168,76,0.4);
+  animation: eventAppear 0.5s ease;
+}
+
+@keyframes eventAppear {
+  from { transform: translate(-50%, -60%); opacity: 0; }
+  to { transform: translate(-50%, -50%); opacity: 1; }
+}
+
+.event-banner h2 {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 22px;
+  color: var(--gold);
+  margin-bottom: 15px;
+}
+
+.event-banner p {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+/* SPECIAL BUTTON */
+.next-day-btn {
+  background: linear-gradient(135deg, rgba(139,26,26,0.5), rgba(201,168,76,0.2));
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  padding: 5px 20px;
+  cursor: pointer;
+  font-family: 'Noto Serif KR', serif;
+  font-size: 13px;
+  transition: all 0.3s;
+  letter-spacing: 2px;
+}
+
+.next-day-btn:hover {
+  background: linear-gradient(135deg, rgba(139,26,26,0.8), rgba(201,168,76,0.4));
+  box-shadow: 0 0 15px rgba(201,168,76,0.3);
+}
+
+/* LOYALTY WARNING PULSE */
+@keyframes loyaltyWarn {
+  0%,100% { box-shadow: none; }
+  50% { box-shadow: 0 0 8px rgba(255,50,50,0.6); }
+}
+
+.general-card.loyalty-warn {
+  animation: loyaltyWarn 1.5s ease infinite;
+  border-color: rgba(255,80,80,0.5) !important;
+}
+
+.free-agent-badge {
+  display: inline-block;
+  font-size: 9px;
+  background: rgba(201,168,76,0.2);
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  padding: 1px 5px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.stat-box .s-val.high { color: #6bff6b; }
+.stat-box .s-val.mid  { color: #ffd700; }
+.stat-box .s-val.low  { color: #e8d5a0; }
+</style>
+</head>
+<body>
+
+<!-- TITLE SCREEN -->
+<div id="titleScreen">
+  <div class="title-main">三國志</div>
+  <div class="title-sub">천하통일</div>
+  <div class="title-divider"></div>
+  <div style="color: var(--text-dim); font-size: 13px; margin-bottom: 20px; letter-spacing: 3px;">— 시나리오 선택 —</div>
+  <div class="scenario-list">
+    <button class="scenario-btn" onclick="startGame(0)">
+      <span class="scenario-year">184년</span>
+      <div>
+        <div style="color:var(--gold)">황건적의 난</div>
+        <div style="font-size:11px;color:var(--text-dim)">장각의 난이 천하를 뒤흔들다. 한 왕조의 몰락이 시작된다.</div>
+      </div>
+    </button>
+    <button class="scenario-btn" onclick="startGame(1)">
+      <span class="scenario-year">189년</span>
+      <div>
+        <div style="color:var(--gold)">동탁의 폭정</div>
+        <div style="font-size:11px;color:var(--text-dim)">동탁이 낙양을 점령하고 황제를 폐위하다. 반동탁 연합이 결성된다.</div>
+      </div>
+    </button>
+    <button class="scenario-btn" onclick="startGame(2)">
+      <span class="scenario-year">200년</span>
+      <div>
+        <div style="color:var(--gold)">관도 대전</div>
+        <div style="font-size:11px;color:var(--text-dim)">조조와 원소의 운명을 건 대결. 천하의 패권이 결정된다.</div>
+      </div>
+    </button>
+    <button class="scenario-btn" onclick="startGame(3)">
+      <span class="scenario-year">208년</span>
+      <div>
+        <div style="color:var(--gold)">적벽 대전</div>
+        <div style="font-size:11px;color:var(--text-dim)">조조의 남정. 오·촉 연합의 저항. 삼국정립의 기초가 세워진다.</div>
+      </div>
+    </button>
+  </div>
+  <div style="color:var(--text-dim);font-size:11px;margin-top:10px">▼ 시나리오를 선택하면 주인공을 고를 수 있습니다</div>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="gameScreen">
+  <!-- TOP BAR -->
+  <div id="topBar">
+    <div class="stat-chip"><span class="label">세력:</span><span class="val" id="statFaction">-</span></div>
+    <div class="stat-chip"><span class="label">💰금:</span><span class="val" id="statGold">0</span></div>
+    <div class="stat-chip"><span class="label">🌾군량:</span><span class="val" id="statFood">0</span></div>
+    <div class="stat-chip"><span class="label">🐴군마:</span><span class="val" id="statHorse">0</span></div>
+    <div class="stat-chip"><span class="label">⚔️병력:</span><span class="val" id="statTroops">0</span></div>
+    <div class="stat-chip"><span class="label">🏯영지:</span><span class="val" id="statCities">0</span></div>
+    <div class="stat-chip"><span class="label">👑명성:</span><span class="val" id="statFame">0</span></div>
+    <div style="margin-left:auto; display:flex; gap:6px; align-items:center">
+      <span id="weatherIcon" style="font-size:16px">☀️</span>
+      <span id="seasonText" style="color:var(--gold);font-size:11px">봄</span>
+      <div class="stat-chip"><span class="label">📅</span><span class="val" id="dateDisplay">-</span></div>
+      <button class="top-btn gold" onclick="showCharInfo()">👤 내정보</button>
+      <button class="top-btn" onclick="showDiplomacy()">🤝 외교</button>
+      <button class="top-btn" onclick="showRumors()">📜 소문</button>
+      <button class="next-day-btn" onclick="nextDay()">다음날 ▶</button>
+    </div>
+  </div>
+
+  <!-- LEFT PANEL -->
+  <div id="leftPanel">
+    <div class="panel-title">
+      선택 지역
+      <span id="selectedCityName" style="color:var(--text);font-size:11px">-</span>
+    </div>
+    <div id="cityInfoContent">
+      <div style="padding:20px;text-align:center;color:var(--text-dim);font-size:12px">
+        지도에서 도시를 선택하세요
+      </div>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div id="mapContainer">
+    <div id="seasonDisplay">봄 · 맑음</div>
+    <div id="weatherDisplay">☀️</div>
+    <svg id="mapSvg" viewBox="0 0 800 650"></svg>
+    <div id="hoverInfo"></div>
+    <div id="miniMap">
+      <svg id="miniMapSvg" viewBox="0 0 800 650" width="120" height="80"></svg>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="rightPanel">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchRightTab('generals', this)">장수</button>
+      <button class="tab-btn" onclick="switchRightTab('armies', this)">부대</button>
+      <button class="tab-btn" onclick="switchRightTab('advisors', this)">모사</button>
+      <button class="tab-btn" onclick="switchRightTab('intel', this)">정보</button>
+    </div>
+    <div id="tab-generals" class="right-tab-content active">
+      <div id="generalsList"></div>
+    </div>
+    <div id="tab-armies" class="right-tab-content">
+      <div id="armiesList"></div>
+    </div>
+    <div id="tab-advisors" class="right-tab-content">
+      <div id="advisorsList"></div>
+    </div>
+    <div id="tab-intel" class="right-tab-content">
+      <div id="intelContent" style="padding:8px;font-size:11px;color:var(--text-dim)">모사의 첩보 정보가 여기에 표시됩니다.</div>
+    </div>
+  </div>
+
+  <!-- BOTTOM -->
+  <div id="bottomLog">
+    <div id="eventLog"></div>
+    <div id="actionPanel">
+      <div class="panel-title" style="font-size:11px;padding:4px 8px">행동</div>
+      <button class="action-btn" onclick="openRecruitModal()"><span class="btn-icon">⚔️</span>병력 양성</button>
+      <button class="action-btn" onclick="openAddTroopsModal()"><span class="btn-icon">➕</span>부대 증원</button>
+      <button class="action-btn" onclick="openAttackModal()"><span class="btn-icon">🗡️</span>출전 명령</button>
+      <button class="action-btn" onclick="openRetreatModal()"><span class="btn-icon">🏃</span>후퇴 명령</button>
+      <button class="action-btn" onclick="openRecruitGeneralModal()"><span class="btn-icon">👤</span>인재 모집</button>
+      <button class="action-btn" onclick="openSearchCityModal()"><span class="btn-icon">🔍</span>인재 탐색</button>
+      <button class="action-btn" onclick="openAssignCityModal()"><span class="btn-icon">🏯</span>지역 관리 임명</button>
+      <button class="action-btn" onclick="openSendAmbassadorModal()"><span class="btn-icon">📜</span>사신 파견</button>
+      <button class="action-btn" onclick="openGiftModal()"><span class="btn-icon">🎁</span>선물</button>
+      <button class="action-btn" onclick="openTrainModal()"><span class="btn-icon">🏋️</span>내정 강화</button>
+      <button class="action-btn" onclick="openLendTroopsModal()"><span class="btn-icon">🤝</span>병력 대여</button>
+      <button class="action-btn danger" onclick="openRemoveGeneralModal()"><span class="btn-icon">❌</span>장수 파면</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS CONTAINER -->
+<div id="modalsContainer"></div>
+<div id="notificationsContainer"></div>
+<div id="tooltipEl" class="tooltip" style="display:none"></div>
+
+<script>
+// =============================================
+// GAME DATA
+// =============================================
+
+const REGIONS = [
+  // 사예 (司隸)
+  { id:'luoyang', name:'낙양', x:380, y:200, regionGroup:'사예', terrain:'평야', population:50000, defBonus:10, adjacent:['henei','hongnong','yingchuan','nanyang','hedong'] },
+  { id:'henei', name:'하내', x:400, y:170, regionGroup:'사예', terrain:'평야', population:30000, defBonus:5, adjacent:['luoyang','ye','dongjun'] },
+  { id:'hongnong', name:'홍농', x:330, y:195, regionGroup:'사예', terrain:'산악', population:20000, defBonus:20, adjacent:['luoyang','hedong','chang\'an','nanyang'] },
+  { id:'hedong', name:'하동', x:300, y:170, regionGroup:'사예', terrain:'평야', population:25000, defBonus:8, adjacent:['hongnong','luoyang','pingyang','chang\'an'] },
+  // 병주 (幷州)
+  { id:'pingyang', name:'평양', x:270, y:140, regionGroup:'병주', terrain:'고원', population:15000, defBonus:15, adjacent:['hedong','taiyuan','shangdang'] },
+  { id:'taiyuan', name:'태원', x:280, y:110, regionGroup:'병주', terrain:'고원', population:20000, defBonus:15, adjacent:['pingyang','shangdang','yanmen'] },
+  { id:'shangdang', name:'상당', x:340, y:145, regionGroup:'병주', terrain:'산악', population:18000, defBonus:25, adjacent:['taiyuan','pingyang','ye','henei'] },
+  { id:'yanmen', name:'안문', x:270, y:80, regionGroup:'병주', terrain:'산악', population:12000, defBonus:20, adjacent:['taiyuan','daijun'] },
+  // 기주 (冀州)
+  { id:'ye', name:'업', x:420, y:145, regionGroup:'기주', terrain:'평야', population:40000, defBonus:10, adjacent:['henei','shangdang','qinghe','pingyuan','zhongshan','changshan'] },
+  { id:'qinghe', name:'청하', x:470, y:145, regionGroup:'기주', terrain:'평야', population:22000, defBonus:5, adjacent:['ye','pingyuan','julu'] },
+  { id:'pingyuan', name:'평원', x:490, y:120, regionGroup:'기주', terrain:'평야', population:25000, defBonus:5, adjacent:['qinghe','ye','jijun','beihai'] },
+  { id:'julu', name:'거록', x:440, y:120, regionGroup:'기주', terrain:'평야', population:28000, defBonus:8, adjacent:['ye','qinghe','zhongshan','changshan'] },
+  { id:'zhongshan', name:'중산', x:400, y:110, regionGroup:'기주', terrain:'평야', population:20000, defBonus:8, adjacent:['ye','julu','changshan','daijun'] },
+  { id:'changshan', name:'상산', x:380, y:128, regionGroup:'기주', terrain:'산악', population:18000, defBonus:18, adjacent:['ye','julu','zhongshan'] },
+  // 유주 (幽州)
+  { id:'daijun', name:'대군', x:350, y:80, regionGroup:'유주', terrain:'고원', population:15000, defBonus:15, adjacent:['yanmen','zhongshan','youbeiping'] },
+  { id:'youbeiping', name:'우북평', x:430, y:70, regionGroup:'유주', terrain:'평야', population:18000, defBonus:10, adjacent:['daijun','yuyang','liaodong'] },
+  { id:'yuyang', name:'어양', x:460, y:85, regionGroup:'유주', terrain:'평야', population:20000, defBonus:8, adjacent:['youbeiping','jijun','beihai'] },
+  { id:'jijun', name:'계군', x:490, y:90, regionGroup:'유주', terrain:'평야', population:25000, defBonus:8, adjacent:['yuyang','pingyuan','liaodong'] },
+  { id:'liaodong', name:'요동', x:560, y:70, regionGroup:'유주', terrain:'평야', population:20000, defBonus:10, adjacent:['jijun','youbeiping','lelang'] },
+  { id:'lelang', name:'낙랑', x:610, y:60, regionGroup:'유주', terrain:'산악', population:8000, defBonus:15, adjacent:['liaodong'] },
+  // 청주 (青州)
+  { id:'beihai', name:'북해', x:530, y:140, regionGroup:'청주', terrain:'평야', population:30000, defBonus:5, adjacent:['pingyuan','jijun','jibei','qingzhou','langye'] },
+  { id:'jibei', name:'제북', x:510, y:165, regionGroup:'청주', terrain:'평야', population:22000, defBonus:5, adjacent:['beihai','qingzhou','dongjun','jinan'] },
+  { id:'qingzhou', name:'청주', x:545, y:155, regionGroup:'청주', terrain:'평야', population:28000, defBonus:5, adjacent:['beihai','jibei','langye','jinan'] },
+  { id:'jinan', name:'제남', x:510, y:185, regionGroup:'청주', terrain:'평야', population:25000, defBonus:5, adjacent:['jibei','qingzhou','dongjun','taishan'] },
+  { id:'langye', name:'낭야', x:570, y:180, regionGroup:'청주', terrain:'연안', population:20000, defBonus:8, adjacent:['beihai','qingzhou','xuzhou'] },
+  // 연주 (兗州)
+  { id:'dongjun', name:'동군', x:450, y:175, regionGroup:'연주', terrain:'평야', population:30000, defBonus:5, adjacent:['henei','ye','jibei','jinan','chenliu','puyang'] },
+  { id:'puyang', name:'복양', x:460, y:158, regionGroup:'연주', terrain:'평야', population:20000, defBonus:5, adjacent:['dongjun','ye','qinghe'] },
+  { id:'chenliu', name:'진류', x:435, y:195, regionGroup:'연주', terrain:'평야', population:28000, defBonus:5, adjacent:['dongjun','luoyang','yingchuan','pei','taishan'] },
+  { id:'taishan', name:'태산', x:490, y:200, regionGroup:'연주', terrain:'산악', population:15000, defBonus:25, adjacent:['jinan','chenliu','donghai','pei'] },
+  // 예주 (豫州)
+  { id:'yingchuan', name:'영천', x:390, y:230, regionGroup:'예주', terrain:'평야', population:35000, defBonus:5, adjacent:['luoyang','chenliu','nanyang','runan','pei'] },
+  { id:'runan', name:'여남', x:410, y:255, regionGroup:'예주', terrain:'평야', population:30000, defBonus:5, adjacent:['yingchuan','pei','nanyang','jiangxia'] },
+  { id:'pei', name:'패', x:460, y:225, regionGroup:'예주', terrain:'평야', population:25000, defBonus:5, adjacent:['chenliu','taishan','yingchuan','runan','xiapi','pengcheng'] },
+  // 서주 (徐州)
+  { id:'xiapi', name:'하비', x:490, y:245, regionGroup:'서주', terrain:'평야', population:30000, defBonus:10, adjacent:['pei','taishan','pengcheng','donghai','guangling'] },
+  { id:'pengcheng', name:'팽성', x:480, y:230, regionGroup:'서주', terrain:'평야', population:22000, defBonus:5, adjacent:['pei','xiapi','donghai'] },
+  { id:'donghai', name:'동해', x:530, y:225, regionGroup:'서주', terrain:'연안', population:20000, defBonus:8, adjacent:['taishan','langye','xiapi','pengcheng','guangling'] },
+  { id:'guangling', name:'광릉', x:520, y:260, regionGroup:'서주', terrain:'강변', population:25000, defBonus:12, adjacent:['xiapi','donghai','jianye','lujiang'] },
+  // 양주 (揚州)
+  { id:'jianye', name:'건업', x:505, y:305, regionGroup:'양주', terrain:'강변', population:35000, defBonus:15, adjacent:['guangling','danyang','lujiang','wujun'] },
+  { id:'danyang', name:'단양', x:520, y:330, regionGroup:'양주', terrain:'산악', population:28000, defBonus:20, adjacent:['jianye','wujun','kuaiji','lujiang'] },
+  { id:'wujun', name:'오군', x:545, y:335, regionGroup:'양주', terrain:'강변', population:32000, defBonus:12, adjacent:['jianye','danyang','kuaiji'] },
+  { id:'kuaiji', name:'회계', x:560, y:360, regionGroup:'양주', terrain:'연안', population:28000, defBonus:10, adjacent:['wujun','danyang','yuzhang'] },
+  { id:'lujiang', name:'노강', x:470, y:320, regionGroup:'양주', terrain:'강변', population:20000, defBonus:12, adjacent:['guangling','jianye','danyang','jiujiang','yuzhang'] },
+  { id:'jiujiang', name:'구강', x:450, y:335, regionGroup:'양주', terrain:'강변', population:22000, defBonus:10, adjacent:['lujiang','runan','jiangxia','yuzhang'] },
+  { id:'yuzhang', name:'예장', x:490, y:370, regionGroup:'양주', terrain:'산악', population:25000, defBonus:18, adjacent:['lujiang','jiujiang','kuaiji','wuling','guiyang'] },
+  // 형주 (荊州)
+  { id:'nanyang', name:'남양', x:355, y:255, regionGroup:'형주', terrain:'분지', population:40000, defBonus:15, adjacent:['luoyang','hongnong','yingchuan','runan','xinye','jiangxia','shangyong'] },
+  { id:'xinye', name:'신야', x:355, y:280, regionGroup:'형주', terrain:'평야', population:20000, defBonus:5, adjacent:['nanyang','jiangxia','xiangyang'] },
+  { id:'xiangyang', name:'양양', x:375, y:295, regionGroup:'형주', terrain:'강변', population:35000, defBonus:18, adjacent:['xinye','jiangxia','shangyong','wuling','jiangling'] },
+  { id:'jiangxia', name:'강하', x:420, y:305, regionGroup:'형주', terrain:'강변', population:25000, defBonus:12, adjacent:['runan','nanyang','xiangyang','jiujiang','jiangling'] },
+  { id:'jiangling', name:'강릉', x:400, y:325, regionGroup:'형주', terrain:'강변', population:30000, defBonus:15, adjacent:['xiangyang','jiangxia','wuling','guiyang','changsha','shangyong'] },
+  { id:'shangyong', name:'상용', x:340, y:300, regionGroup:'형주', terrain:'산악', population:15000, defBonus:25, adjacent:['nanyang','xiangyang','jiangling','zitong'] },
+  { id:'wuling', name:'무릉', x:390, y:360, regionGroup:'형주', terrain:'산악', population:18000, defBonus:20, adjacent:['xiangyang','jiangling','changsha','yuzhang'] },
+  { id:'changsha', name:'장사', x:420, y:375, regionGroup:'형주', terrain:'평야', population:25000, defBonus:8, adjacent:['jiangling','wuling','guiyang','yuzhang','jiujiang'] },
+  { id:'guiyang', name:'계양', x:440, y:395, regionGroup:'형주', terrain:'산악', population:15000, defBonus:20, adjacent:['changsha','wuling','yuzhang','lingling'] },
+  { id:'lingling', name:'영릉', x:415, y:405, regionGroup:'형주', terrain:'산악', population:15000, defBonus:18, adjacent:['jiangling','changsha','guiyang','jiaozhou'] },
+  // 익주 (益州)
+  { id:'chengdu', name:'성도', x:240, y:330, regionGroup:'익주', terrain:'분지', population:45000, defBonus:15, adjacent:['zitong','jiameng','baxi','qianwei','zunyi'] },
+  { id:'zitong', name:'자동', x:260, y:285, regionGroup:'익주', terrain:'산악', population:12000, defBonus:30, adjacent:['chengdu','jiameng','shangyong','hanzhong'] },
+  { id:'jiameng', name:'가맹', x:240, y:265, regionGroup:'익주', terrain:'산악', population:10000, defBonus:35, adjacent:['zitong','hanzhong','baxi'] },
+  { id:'hanzhong', name:'한중', x:295, y:270, regionGroup:'익주', terrain:'분지', population:20000, defBonus:20, adjacent:['jiameng','zitong','shangyong','chang\'an','wudu'] },
+  { id:'baxi', name:'파서', x:220, y:295, regionGroup:'익주', terrain:'산악', population:15000, defBonus:25, adjacent:['chengdu','jiameng','wudu'] },
+  { id:'wudu', name:'무도', x:220, y:250, regionGroup:'익주', terrain:'산악', population:10000, defBonus:30, adjacent:['baxi','jiameng','hanzhong','tianshui'] },
+  { id:'qianwei', name:'건위', x:220, y:355, regionGroup:'익주', terrain:'산악', population:12000, defBonus:25, adjacent:['chengdu','zunyi','yongchang'] },
+  { id:'zunyi', name:'준의', x:235, y:385, regionGroup:'익주', terrain:'산악', population:10000, defBonus:20, adjacent:['chengdu','qianwei','yongchang','jiaozhou'] },
+  { id:'yongchang', name:'영창', x:200, y:400, regionGroup:'익주', terrain:'산악', population:8000, defBonus:25, adjacent:['qianwei','zunyi','jiaozhou'] },
+  // 관중 (關中) / 옹주
+  { id:'changan', name:'장안', x:290, y:205, regionGroup:'옹주', terrain:'평야', population:40000, defBonus:15, adjacent:['luoyang','hongnong','hedong','hanzhong','tianshui','anding'] },
+  { id:'tianshui', name:'천수', x:225, y:210, regionGroup:'옹주', terrain:'고원', population:15000, defBonus:18, adjacent:['changan','wudu','anding','wuwei'] },
+  { id:'anding', name:'안정', x:255, y:190, regionGroup:'옹주', terrain:'고원', population:12000, defBonus:15, adjacent:['changan','tianshui','beidiguo','wuwei'] },
+  { id:'beidiguo', name:'북지', x:255, y:155, regionGroup:'옹주', terrain:'고원', population:10000, defBonus:12, adjacent:['anding','wuwei','shuofang'] },
+  // 량주 (涼州)
+  { id:'wuwei', name:'무위', x:185, y:170, regionGroup:'량주', terrain:'고원', population:12000, defBonus:15, adjacent:['tianshui','anding','beidiguo','zhangye'] },
+  { id:'zhangye', name:'장액', x:150, y:155, regionGroup:'량주', terrain:'사막', population:8000, defBonus:10, adjacent:['wuwei','dunhuang'] },
+  { id:'dunhuang', name:'돈황', x:110, y:150, regionGroup:'량주', terrain:'사막', population:5000, defBonus:8, adjacent:['zhangye'] },
+  // 삭방 (朔方)
+  { id:'shuofang', name:'삭방', x:250, y:120, regionGroup:'삭방', terrain:'고원', population:8000, defBonus:12, adjacent:['beidiguo','wuwei','yanmen'] },
+  // 교주 (交州)
+  { id:'jiaozhou', name:'교주', x:400, y:440, regionGroup:'교주', terrain:'열대', population:15000, defBonus:10, adjacent:['lingling','zunyi','yongchang'] },
+  // 삼한/요동 접경
+];
+
+// Normalize IDs
+REGIONS.forEach(r => {
+  r.id = r.id.replace("'", '');
+  r.adjacent = r.adjacent.map(a => a.replace("'", ''));
+});
+const REGION_MAP = {};
+REGIONS.forEach(r => REGION_MAP[r.id] = r);
+
+// =============================================
+// ALL HISTORICAL GENERALS
+// =============================================
+const GENERAL_TEMPLATES = [
+  // 조조 세력
+  { id:'caocao', name:'조조', emoji:'🎭', faction:'wei', role:'ruler', wu:72, zhi:96, tong:94, pol:97, traits:['천재전략가','절약령','냉혹'], special:'패왕지략', bio:'한의 승상. 천재적 전략가이자 시인. 천하 통일을 목표로 한다.' },
+  { id:'xiahou_dun', name:'하후돈', emoji:'⚔️', faction:'wei', role:'general', wu:97, zhi:62, tong:85, pol:55, traits:['맹장','충의','독안룡'], special:'맹돌격', bio:'조조의 사촌. 한쪽 눈을 잃고도 적을 두려워하지 않는 맹장.' },
+  { id:'xiahou_yuan', name:'하후연', emoji:'🏇', faction:'wei', role:'general', wu:88, zhi:65, tong:82, pol:48, traits:['기동전','속전속결'], special:'신속기동', bio:'하후돈의 사촌. 신속한 기동력으로 이름을 떨쳤다.' },
+  { id:'zhang_liao', name:'장료', emoji:'🦅', faction:'wei', role:'general', wu:95, zhi:80, tong:90, pol:60, traits:['합비의 호랑이','돌파','용맹'], special:'위풍당당', bio:'합비 전투에서 오나라를 떨게 한 전설의 장수.' },
+  { id:'xu_huang', name:'서황', emoji:'🪓', faction:'wei', role:'general', wu:88, zhi:76, tong:85, pol:56, traits:['엄격','철벽'], special:'도끼진', bio:'엄격한 군율로 유명한 장수. 전투에서 냉철하다.' },
+  { id:'cao_ren', name:'조인', emoji:'🛡️', faction:'wei', role:'general', wu:85, zhi:72, tong:88, pol:65, traits:['철벽수성','인내'], special:'수성불락', bio:'조조의 사촌. 방어전의 대가.' },
+  { id:'guo_jia', name:'곽가', emoji:'📜', faction:'wei', role:'advisor', wu:30, zhi:98, tong:60, pol:90, traits:['귀재','예언','조조의 두뇌'], special:'귀계', bio:'요절한 천재 모사. 조조가 가장 아꼈던 참모.' },
+  { id:'xun_yu', name:'순욱', emoji:'🎓', faction:'wei', role:'advisor', wu:25, zhi:95, tong:65, pol:95, traits:['내정의 달인','정치가'], special:'대국운영', bio:'조조 세력의 내정을 담당한 최고의 참모.' },
+  { id:'jia_xu', name:'가후', emoji:'🦊', faction:'wei', role:'advisor', wu:30, zhi:97, tong:58, pol:80, traits:['독사','음모','독심술'], special:'독계', bio:'3명의 주인을 섬긴 살아있는 독사. 그의 계략은 치명적.' },
+  { id:'xu_chu', name:'허저', emoji:'💪', faction:'wei', role:'general', wu:99, zhi:40, tong:70, pol:30, traits:['호치','맹장','조조의 호위'], special:'호치난폭', bio:'조조의 최측근 호위무사. 막대한 체격과 힘으로 이름을 떨쳤다.' },
+  { id:'dian_wei', name:'전위', emoji:'🔱', faction:'wei', role:'general', wu:98, zhi:38, tong:68, pol:28, traits:['무인','충성','전투광'], special:'쌍극폭풍', bio:'조조의 전위대장. 전장에서 쌍극을 휘두르는 공포의 전사.' },
+  { id:'zhang_he', name:'장합', emoji:'🏔️', faction:'wei', role:'general', wu:85, zhi:82, tong:87, pol:58, traits:['지략','기동'], special:'산악전투', bio:'원소에서 투항한 명장. 촉의 제갈량도 두려워했다.' },
+  { id:'sima_yi', name:'사마의', emoji:'🦉', faction:'wei', role:'advisor', wu:45, zhi:97, tong:85, pol:92, traits:['인내','독수리','음모'], special:'은인자중', bio:'조조의 참모. 후에 위나라를 실질적으로 장악하게 된다.' },
+  { id:'cao_zhang', name:'조창', emoji:'🐯', faction:'wei', role:'general', wu:96, zhi:55, tong:80, pol:45, traits:['맹장','야전'], special:'황수전투', bio:'조조의 셋째 아들. 황발장군이라 불린 맹장.' },
+  { id:'cao_pi', name:'조비', emoji:'👑', faction:'wei', role:'ruler', wu:70, zhi:82, tong:78, pol:88, traits:['황제','문인','냉정'], special:'제왕지도', bio:'조조의 아들. 후한을 멸하고 위나라를 건국한다.' },
+  // 유비 세력
+  { id:'liubei', name:'유비', emoji:'🌟', faction:'shu', role:'ruler', wu:68, zhi:75, tong:80, pol:90, traits:['인덕','눈물의 정치','대의'], special:'인덕위정', bio:'한의 황숙. 인덕으로 천하를 얻으려 한다.' },
+  { id:'guanyu', name:'관우', emoji:'🔴', faction:'shu', role:'general', wu:98, zhi:78, tong:92, pol:70, traits:['의협','무성','충의'], special:'청룡언월도', bio:'오호대장군의 으뜸. 의리와 충성의 화신.' },
+  { id:'zhangfei', name:'장비', emoji:'🐗', faction:'shu', role:'general', wu:97, zhi:55, tong:80, pol:40, traits:['폭풍','호걸','술버릇'], special:'장판교포효', bio:'서민 출신의 호걸. 목소리 하나로 적군을 물리쳤다.' },
+  { id:'zhuge_liang', name:'제갈량', emoji:'🪄', faction:'shu', role:'advisor', wu:35, zhi:100, tong:92, pol:98, traits:['와룡','천재','5행진법'], special:'공명지계', bio:'삼국지 최고의 전략가. 유비를 천하 셋으로 만들었다.' },
+  { id:'zhao_yun', name:'조운', emoji:'⚡', faction:'shu', role:'general', wu:97, zhi:82, tong:90, pol:72, traits:['백마장군','충성','일기당천'], special:'용담호위', bio:'백마를 탄 의리의 장수. 유비의 아들을 구해낸 명장.' },
+  { id:'ma_chao', name:'마초', emoji:'🦁', faction:'shu', role:'general', wu:96, zhi:58, tong:82, pol:50, traits:['서량의 호랑이','복수','기마'], special:'서량철기', bio:'아버지의 복수를 위해 조조에게 반기를 든 용맹한 장수.' },
+  { id:'huang_zhong', name:'황충', emoji:'🏹', faction:'shu', role:'general', wu:91, zhi:66, tong:80, pol:45, traits:['노장','백발백중','투지'], special:'백발신궁', bio:'나이가 들어도 활솜씨만큼은 천하제일인 노장.' },
+  { id:'wei_yan', name:'위연', emoji:'🗡️', faction:'shu', role:'general', wu:93, zhi:68, tong:85, pol:52, traits:['반골','맹장','한중수비'], special:'자오도기습', bio:'제갈량과 자주 충돌했던 강직한 맹장.' },
+  { id:'pang_tong', name:'방통', emoji:'🦅', faction:'shu', role:'advisor', wu:30, zhi:96, tong:70, pol:82, traits:['봉추','진격파','전략가'], special:'연환지계', bio:'제갈량과 쌍벽을 이룬 천재 책사. 와룡봉추 중 봉추.' },
+  { id:'jiang_wei', name:'강유', emoji:'🌊', faction:'shu', role:'general', wu:88, zhi:90, tong:88, pol:75, traits:['충성','제갈량의 후계','북벌'], special:'계략진', bio:'제갈량에게 재능을 인정받아 후계자로 지명된 장수.' },
+  { id:'liu_feng', name:'유봉', emoji:'⚔️', faction:'shu', role:'general', wu:82, zhi:55, tong:68, pol:45, traits:['용맹','의리'], special:'진격', bio:'유비의 양자. 용맹하지만 나중에 처형된다.' },
+  // 손권 세력
+  { id:'sunquan', name:'손권', emoji:'🌊', faction:'wu', role:'ruler', wu:65, zhi:82, tong:88, pol:92, traits:['강동의 호랑이','방어','외교'], special:'강동지주', bio:'오나라의 군주. 형 손책의 뒤를 이어 강동을 다스린다.' },
+  { id:'zhou_yu', name:'주유', emoji:'🎵', faction:'wu', role:'advisor', wu:70, zhi:96, tong:88, pol:80, traits:['미인','천재','적벽'], special:'화공지략', bio:'적벽 대전의 영웅. 음악과 전략 모두 천재.' },
+  { id:'lu_su', name:'노숙', emoji:'🤝', faction:'wu', role:'advisor', wu:55, zhi:88, tong:75, pol:90, traits:['외교','온화','촉오동맹'], special:'동맹결성', bio:'오나라 외교의 핵심. 촉오동맹을 주도한 평화주의자.' },
+  { id:'lu_meng', name:'여몽', emoji:'🦊', faction:'wu', role:'general', wu:90, zhi:86, tong:88, pol:72, traits:['형주탈취','야심','독서'], special:'도백의주', bio:'관우로부터 형주를 탈취한 오나라 최고의 전략적 장수.' },
+  { id:'gan_ning', name:'감녕', emoji:'🏴‍☠️', faction:'wu', role:'general', wu:92, zhi:62, tong:78, pol:45, traits:['해적','급습','용감'], special:'백기야습', bio:'원래 강도였지만 오나라에서 이름을 떨친 기습의 달인.' },
+  { id:'taishi_ci', name:'태사자', emoji:'🏹', faction:'wu', role:'general', wu:93, zhi:68, tong:82, pol:50, traits:['의협','수성','부하사랑'], special:'쌍극기습', bio:'손권의 충신. 수성전에서 명성을 날린 용맹한 장수.' },
+  { id:'sun_ce', name:'손책', emoji:'⚡', faction:'wu', role:'ruler', wu:95, zhi:75, tong:90, pol:80, traits:['소패왕','돌파','개척'], special:'파죽지세', bio:'오나라의 기반을 닦은 손권의 형. 소패왕이라 불렸다.' },
+  { id:'lu_xun', name:'육손', emoji:'🎯', faction:'wu', role:'advisor', wu:55, zhi:97, tong:88, pol:82, traits:['이릉','방어','인내'], special:'화공이릉', bio:'이릉 전투에서 유비를 격파한 오나라 최고의 전략가.' },
+  { id:'zhuge_jin', name:'제갈근', emoji:'📋', faction:'wu', role:'advisor', wu:40, zhi:82, tong:65, pol:88, traits:['외교관','온화'], special:'화평협상', bio:'제갈량의 형. 오나라에서 외교를 담당한다.' },
+  { id:'ding_feng', name:'정봉', emoji:'🗡️', faction:'wu', role:'general', wu:85, zhi:70, tong:82, pol:55, traits:['용맹','수전'], special:'단기기습', bio:'오나라 말기를 이끈 용맹한 장수.' },
+  // 원소 세력
+  { id:'yuanshao', name:'원소', emoji:'👑', faction:'yuan', role:'ruler', wu:55, zhi:60, tong:72, pol:78, traits:['우유부단','명문','교만'], special:'사주연합', bio:'명문 원가의 후손. 관도 대전에서 조조에게 패한다.' },
+  { id:'yan_liang', name:'안량', emoji:'⚔️', faction:'yuan', role:'general', wu:97, zhi:45, tong:78, pol:35, traits:['맹장','돌격'], special:'백마지공', bio:'원소의 첫째 맹장. 관우에게 쓰러질 때까지 무서운 힘을 자랑했다.' },
+  { id:'wen_chou', name:'문추', emoji:'🪓', faction:'yuan', role:'general', wu:96, zhi:47, tong:75, pol:32, traits:['맹장','보복'], special:'복수진격', bio:'원소의 둘째 맹장. 안량과 쌍벽을 이뤘다.' },
+  { id:'tian_feng', name:'전풍', emoji:'📜', faction:'yuan', role:'advisor', wu:30, zhi:90, tong:62, pol:82, traits:['직간','비극','예언'], special:'직언쓴소리', bio:'원소에게 직간을 올렸다가 처형된 비운의 책사.' },
+  { id:'ju_shou', name:'저수', emoji:'📖', faction:'yuan', role:'advisor', wu:25, zhi:88, tong:60, pol:80, traits:['충직','비극'], special:'지구전', bio:'전풍과 함께 원소의 두 기둥이었던 비운의 모사.' },
+  // 동탁 세력
+  { id:'dongzhuo', name:'동탁', emoji:'👹', faction:'dong', role:'ruler', wu:68, zhi:52, tong:75, pol:45, traits:['폭군','강탈','낙양방화'], special:'폭정압제', bio:'낙양을 장악하고 황제를 폐위한 폭군.' },
+  { id:'lv_bu', name:'여포', emoji:'🌪️', faction:'dong', role:'general', wu:100, zhi:48, tong:78, pol:35, traits:['천하제일','삼성가신','야심'], special:'방천화극', bio:'천하제일의 용맹을 자랑하는 장수. 3명의 의부를 배반했다.' },
+  { id:'li_jue', name:'이각', emoji:'🗡️', faction:'dong', role:'general', wu:75, zhi:42, tong:68, pol:38, traits:['반역','잔인'], special:'반란군', bio:'동탁 사후 장안을 장악한 잔인한 장수.' },
+  { id:'guo_si', name:'곽사', emoji:'⚔️', faction:'dong', role:'general', wu:73, zhi:40, tong:65, pol:35, traits:['반역','폭력'], special:'진압전', bio:'이각과 함께 장안을 어지럽힌 장수.' },
+  { id:'hua_xiong', name:'화웅', emoji:'🦮', faction:'dong', role:'general', wu:88, zhi:42, tong:70, pol:30, traits:['맹장','교만'], special:'호뢰관방어', bio:'호뢰관을 지키다 관우에게 쓰러진 동탁의 맹장.' },
+  // 황건 세력
+  { id:'zhang_jue', name:'장각', emoji:'☁️', faction:'yellow', role:'ruler', wu:55, zhi:80, tong:78, pol:72, traits:['대현량사','황건','마술'], special:'태평요술', bio:'황건적의 우두머리. 태평도를 창시하여 난을 일으켰다.' },
+  { id:'zhang_bao', name:'장보', emoji:'🌪️', faction:'yellow', role:'general', wu:72, zhi:68, tong:70, pol:45, traits:['황건','마술'], special:'요술진', bio:'장각의 동생. 황건군의 부장.' },
+  { id:'zhang_liang2', name:'장량', emoji:'⚡', faction:'yellow', role:'general', wu:70, zhi:65, tong:68, pol:40, traits:['황건','마술'], special:'요술술법', bio:'장각의 막내동생. 황건군의 부장.' },
+  // 기타 중요 인물
+  { id:'dong_cheng', name:'동승', emoji:'📜', faction:'han', role:'advisor', wu:40, zhi:72, tong:55, pol:80, traits:['충신','조조암살계획'], special:'의대조서', bio:'헌제의 장인. 조조를 암살하려 했지만 실패.' },
+  { id:'diao_chan', name:'초선', emoji:'💎', faction:'han', role:'advisor', wu:20, zhi:85, tong:45, pol:90, traits:['미인계','이간질'], special:'미인계', bio:'사대미인 중 하나. 동탁과 여포 사이를 이간시켰다.' },
+  { id:'gongsun_zan', name:'공손찬', emoji:'🐴', faction:'neutral', role:'ruler', wu:75, zhi:62, tong:78, pol:65, traits:['백마의진','북방'], special:'백마의진', bio:'유주의 호족. 백마의진으로 이름을 떨쳤다.' },
+  { id:'tao_qian', name:'도겸', emoji:'🏯', faction:'neutral', role:'ruler', wu:45, zhi:68, tong:65, pol:78, traits:['인자','서주목'], special:'화평정치', bio:'서주를 다스린 온화한 군주. 유비에게 서주를 물려준다.' },
+  { id:'liu_biao', name:'유표', emoji:'📜', faction:'neutral', role:'ruler', wu:42, zhi:65, tong:62, pol:80, traits:['형주목','우유부단','중립'], special:'중립유지', bio:'형주를 다스렸지만 결단력이 부족했다.' },
+  { id:'liu_zhang', name:'유장', emoji:'🏯', faction:'neutral', role:'ruler', wu:40, zhi:58, tong:55, pol:72, traits:['익주목','나약'], special:'유화책', bio:'익주를 다스렸지만 유비에게 빼앗긴다.' },
+  { id:'ma_teng', name:'마등', emoji:'⚔️', faction:'neutral', role:'ruler', wu:80, zhi:65, tong:78, pol:60, traits:['서량','반동탁'], special:'서량철기', bio:'마초의 아버지. 서량의 군웅.' },
+  { id:'zhang_xiu', name:'장수', emoji:'🗡️', faction:'neutral', role:'general', wu:82, zhi:62, tong:75, pol:50, traits:['배신','완성'], special:'기습배반', bio:'완성에서 조조를 기습하여 전위를 죽인 장수.' },
+  { id:'chen_gong', name:'진궁', emoji:'📖', faction:'neutral', role:'advisor', wu:25, zhi:90, tong:62, pol:78, traits:['의리','배신','전략'], special:'봉의정략', bio:'조조를 버리고 여포를 섬긴 의리있는 모사.' },
+  { id:'cao_cao2', name:'조홍', emoji:'⚔️', faction:'wei', role:'general', wu:80, zhi:58, tong:72, pol:48, traits:['충성','용맹'], special:'돌격대', bio:'조조의 사촌. 위기에서 조조를 구해낸 장수.' },
+  { id:'yu_jin', name:'우금', emoji:'🛡️', faction:'wei', role:'general', wu:80, zhi:70, tong:82, pol:58, traits:['철벽','항복'], special:'철벽진', bio:'조조의 5대장 중 하나. 관우에게 항복한 후 굴욕적인 삶을 살았다.' },
+  { id:'li_dian', name:'이전', emoji:'⚔️', faction:'wei', role:'general', wu:78, zhi:75, tong:78, pol:55, traits:['냉정','합비'], special:'합비방어', bio:'장료, 악진과 함께 합비를 지킨 장수.' },
+  { id:'yue_jin', name:'악진', emoji:'🗡️', faction:'wei', role:'general', wu:85, zhi:62, tong:78, pol:45, traits:['선봉','용감'], special:'선봉돌격', bio:'조조군의 선봉장. 작은 체구지만 엄청난 용맹.' },
+  { id:'deng_ai', name:'등애', emoji:'🏔️', faction:'wei', role:'general', wu:82, zhi:90, tong:88, pol:72, traits:['기습','산악전','익주정벌'], special:'음평기도', bio:'촉을 멸망시킨 명장. 험한 산길을 통해 익주를 기습했다.' },
+  { id:'zhong_hui', name:'종회', emoji:'📜', faction:'wei', role:'advisor', wu:50, zhi:92, tong:75, pol:85, traits:['야심','총명'], special:'천재책략', bio:'등애와 함께 촉을 멸망시킨 야심 있는 인물.' },
+  { id:'sun_jian', name:'손견', emoji:'🦁', faction:'wu', role:'ruler', wu:90, zhi:72, tong:85, pol:72, traits:['강동의 호랑이','전옥새발견'], special:'강동호랑이', bio:'오나라의 시조. 손책, 손권의 아버지.' },
+  { id:'huang_gai', name:'황개', emoji:'🔥', faction:'wu', role:'general', wu:85, zhi:70, tong:80, pol:55, traits:['고육지계','화공','충성'], special:'고육지계', bio:'적벽 대전에서 고육지계로 조조에게 접근한 노장.' },
+  { id:'cheng_pu', name:'정보', emoji:'⚔️', faction:'wu', role:'general', wu:83, zhi:70, tong:80, pol:62, traits:['원로','삼조'], special:'삼조공신', bio:'손견, 손책, 손권 3대를 섬긴 오나라 원로 장수.' },
+  { id:'han_dang', name:'한당', emoji:'🗡️', faction:'wu', role:'general', wu:82, zhi:62, tong:78, pol:50, traits:['원로','수전'], special:'수전명가', bio:'오나라 초창기부터 활약한 원로 장수.' },
+  { id:'zhou_tai', name:'주태', emoji:'🛡️', faction:'wu', role:'general', wu:88, zhi:60, tong:75, pol:42, traits:['손권호위','상처투성이'], special:'호위전사', bio:'손권을 몸으로 막아 수십 군데 상처를 입은 충신.' },
+];
+
+// Scenarios
+const SCENARIOS = [
+  { // 0: 황건적의 난
+    name:'황건적의 난', year:184, month:2,
+    desc:'장각이 이끄는 황건적이 천하를 뒤흔들고 있다. 한 왕조를 구하고 이름을 떨쳐라!',
+    factions: {
+      yellow_turban: { name:'황건군', color:'#8b6000', cities:['julu','qingzhou','beihai','jibei'], generals:['zhang_jue','zhang_bao','zhang_liang2'], resources:{gold:5000,food:8000,horse:500} },
+      han_court: { name:'한 조정', color:'#8b8b00', cities:['luoyang','changan','hongnong','hedong'], generals:['dong_cheng','diao_chan'], resources:{gold:8000,food:10000,horse:1000} },
+      gongsun: { name:'공손찬', color:'#008b8b', cities:['youbeiping','yuyang','jijun'], generals:['gongsun_zan'], resources:{gold:3000,food:4000,horse:2000} },
+    },
+    playerChoices: [
+      { id:'liubei', faction:'shu', startCity:'pingyuan', name:'유비', emoji:'🌟', desc:'한 황실의 후손. 의협심으로 황건적을 토벌한다.' },
+      { id:'caocao', faction:'wei', startCity:'chenliu', name:'조조', emoji:'🎭', desc:'한의 관리. 황건적 토벌로 세력을 키운다.' },
+      { id:'sun_jian', faction:'wu', startCity:'wujun', name:'손견', emoji:'🦁', desc:'강동의 호랑이. 남방에서 힘을 기른다.' },
+      { id:'gongsun_zan', faction:'neutral', startCity:'youbeiping', name:'공손찬', emoji:'🐴', desc:'유주의 군주. 백마의진으로 황건적을 격파한다.' },
+    ]
+  },
+  { // 1: 동탁의 폭정
+    name:'동탁의 폭정', year:189, month:9,
+    desc:'동탁이 낙양을 점령하고 황제를 폐위했다. 반동탁 연합이 결성되고 있다!',
+    factions: {
+      dong_zhuo: { name:'동탁', color:'#8b008b', cities:['luoyang','changan','hongnong','hedong','hanzhong'], generals:['dongzhuo','lv_bu','li_jue','guo_si','hua_xiong'], resources:{gold:15000,food:20000,horse:3000} },
+      yuan_shao: { name:'원소', color:'#00008b', cities:['ye','julu','zhongshan','changshan'], generals:['yuanshao','yan_liang','wen_chou','tian_feng','ju_shou'], resources:{gold:10000,food:15000,horse:2000} },
+      cao_cao_f: { name:'조조', color:'#4a7ace', cities:['chenliu','dongjun'], generals:['caocao','xiahou_dun','xiahou_yuan','dian_wei','guo_jia'], resources:{gold:8000,food:10000,horse:1500} },
+    },
+    playerChoices: [
+      { id:'caocao', faction:'wei', startCity:'chenliu', name:'조조', emoji:'🎭', desc:'반동탁 연합을 이끌고 낙양을 탈환하라!' },
+      { id:'liubei', faction:'shu', startCity:'pei', name:'유비', emoji:'🌟', desc:'공손찬 밑에서 세력을 키워 의거를 일으켜라!' },
+      { id:'sunquan', faction:'wu', startCity:'wujun', name:'손권', emoji:'🌊', desc:'강동에서 세력을 키워 천하를 도모하라!' },
+      { id:'lv_bu', faction:'neutral', startCity:'luoyang', name:'여포', emoji:'🌪️', desc:'천하제일의 무력으로 스스로 천하의 주인이 되어라!' },
+    ]
+  },
+  { // 2: 관도 대전
+    name:'관도 대전', year:200, month:1,
+    desc:'조조와 원소의 운명을 건 대결이 시작된다. 어느 편에 설 것인가?',
+    factions: {
+      cao_cao_f: { name:'조조', color:'#4a7ace', cities:['luoyang','changan','chenliu','dongjun','yingchuan','runan','pei','ye'], generals:['caocao','xiahou_dun','zhang_liao','xu_huang','cao_ren','guo_jia','xun_yu','jia_xu','xu_chu','zhang_he'], resources:{gold:20000,food:25000,horse:3000} },
+      yuan_shao_f: { name:'원소', color:'#8b4513', cities:['julu','qinghe','pingyuan','zhongshan','changshan','youbeiping','yuyang'], generals:['yuanshao','yan_liang','wen_chou','tian_feng','ju_shou'], resources:{gold:25000,food:30000,horse:4000} },
+      liu_biao_f: { name:'유표', color:'#008000', cities:['nanyang','xinye','xiangyang','jiangxia','jiangling','wuling','changsha'], generals:['liu_biao'], resources:{gold:15000,food:18000,horse:1500} },
+      sun_quan_f: { name:'손권', color:'#8b0000', cities:['jianye','danyang','wujun','kuaiji','lujiang'], generals:['sunquan','zhou_yu','lu_su','gan_ning','taishi_ci','huang_gai'], resources:{gold:15000,food:20000,horse:1000} },
+    },
+    playerChoices: [
+      { id:'caocao', faction:'wei', startCity:'luoyang', name:'조조', emoji:'🎭', desc:'관도에서 원소를 격파하고 화북을 통일하라!' },
+      { id:'liubei', faction:'shu', startCity:'xinye', name:'유비', emoji:'🌟', desc:'유표 밑에서 힘을 길러 천하를 도모하라!' },
+      { id:'yuanshao', faction:'yuan', startCity:'ye', name:'원소', emoji:'👑', desc:'70만 대군으로 조조를 격파하고 천하를 통일하라!' },
+      { id:'sunquan', faction:'wu', startCity:'jianye', name:'손권', emoji:'🌊', desc:'강동에서 힘을 길러 중원을 노려라!' },
+    ]
+  },
+  { // 3: 적벽 대전
+    name:'적벽 대전', year:208, month:7,
+    desc:'조조가 80만 대군으로 남정을 시작했다. 적벽에서 오·촉 연합과의 운명적인 결전이 다가온다!',
+    factions: {
+      cao_cao_f: { name:'조조', color:'#4a7ace', cities:['luoyang','changan','chenliu','dongjun','yingchuan','runan','pei','ye','julu','nanyang','xinye'], generals:['caocao','xiahou_dun','zhang_liao','xu_huang','cao_ren','jia_xu','xu_chu','zhang_he','sima_yi','cao_zhang','li_dian','yue_jin'], resources:{gold:35000,food:50000,horse:5000} },
+      sun_quan_f: { name:'손권', color:'#8b0000', cities:['jianye','danyang','wujun','kuaiji','lujiang','jiujiang'], generals:['sunquan','zhou_yu','lu_su','lu_meng','gan_ning','taishi_ci','huang_gai','cheng_pu','han_dang','zhou_tai','lu_xun'], resources:{gold:25000,food:30000,horse:1500} },
+      liu_bei_f: { name:'유비', color:'#006400', cities:['xiangyang','jiangxia'], generals:['liubei','guanyu','zhangfei','zhao_yun','zhuge_liang','pang_tong','wei_yan','huang_zhong'], resources:{gold:10000,food:12000,horse:2000} },
+    },
+    playerChoices: [
+      { id:'caocao', faction:'wei', startCity:'luoyang', name:'조조', emoji:'🎭', desc:'80만 대군으로 남방을 정복하고 천하를 통일하라!' },
+      { id:'sunquan', faction:'wu', startCity:'jianye', name:'손권', emoji:'🌊', desc:'화공으로 조조를 격파하고 강동을 지켜라!' },
+      { id:'liubei', faction:'shu', startCity:'xiangyang', name:'유비', emoji:'🌟', desc:'제갈량의 계략으로 조조를 물리치고 형주를 얻어라!' },
+      { id:'zhuge_liang', faction:'shu', startCity:'xiangyang', name:'제갈량', emoji:'🪄', desc:'동풍을 빌려 적벽에 불을 지르고 유비의 천하를 만들어라!' },
+    ]
+  },
+];
+
+// =============================================
+// GAME STATE
+// =============================================
+let G = {};
+
+function initGameState(scenarioIdx, playerId) {
+  const sc = SCENARIOS[scenarioIdx];
+  const playerChoice = sc.playerChoices.find(p => p.id === playerId);
+  
+  // Initialize cities
+  const cities = {};
+  REGIONS.forEach(r => {
+    cities[r.id] = {
+      ...r,
+      owner: 'neutral',
+      troops: Math.floor(r.population * 0.1),
+      maxTroops: Math.floor(r.population * 0.5),
+      gold: Math.floor(r.population * 0.2),
+      food: Math.floor(r.population * 0.3),
+      horses: Math.floor(r.population * 0.02),
+      defense: r.defBonus,
+      development: 50, // 0-100
+      stability: 70, // 0-100
+      governor: null, // general id
+      garrisonGenerals: [],
+    };
+  });
+  
+  // Assign cities to factions
+  const factions = {};
+  // Build base factions from scenario
+  Object.entries(sc.factions).forEach(([fid, fdata]) => {
+    factions[fid] = {
+      id: fid, name: fdata.name, color: fdata.color,
+      gold: fdata.resources.gold, food: fdata.resources.food, horses: fdata.resources.horse,
+      generals: [...fdata.generals],
+      relations: {}, // factionId -> {type, value}
+      fame: 50,
+      isPlayer: false,
+    };
+    fdata.cities.forEach(cid => {
+      if(cities[cid]) cities[cid].owner = fid;
+    });
+  });
+  
+  // Player faction
+  const playerFactionId = 'player';
+  factions[playerFactionId] = {
+    id: playerFactionId, name: playerChoice.name + '의 세력',
+    color: '#ce4a4a',
+    gold: 12000, food: 15000, horses: 2000,
+    generals: [playerId],
+    relations: {},
+    fame: 30,
+    isPlayer: true,
+  };
+  cities[playerChoice.startCity].owner = playerFactionId;
+  cities[playerChoice.startCity].troops = 5000;
+  
+  // Remove player from other factions
+  Object.values(factions).forEach(f => {
+    if(f.id !== playerFactionId) {
+      f.generals = f.generals.filter(g => g !== playerId);
+    }
+  });
+  
+  // Initialize relations
+  Object.keys(factions).forEach(fid => {
+    factions[fid].relations = {};
+    Object.keys(factions).forEach(fid2 => {
+      if(fid !== fid2) {
+        factions[fid].relations[fid2] = { type:'neutral', value:50 };
+      }
+    });
+  });
+  
+  // Initialize generals
+  const generals = {};
+  GENERAL_TEMPLATES.forEach(gt => {
+    generals[gt.id] = {
+      ...gt,
+      hp: 100, maxHp: 100,
+      exp: 0, level: 1,
+      loyalty: 80 + Math.floor(Math.random()*20),
+      morale: 80,
+      fatigue: 0,
+      troops: 0,
+      food: 0,
+      assignedCity: null,
+      inBattle: false,
+      isRecruited: false,
+      skills: [gt.special],
+      knownBy: [],
+    };
+  });
+  
+  // Assign generals to factions
+  Object.values(factions).forEach(f => {
+    f.generals.forEach(gid => {
+      if(generals[gid]) {
+        generals[gid].isRecruited = true;
+        generals[gid].factionId = f.id;
+        generals[gid].troops = 2000 + Math.floor(Math.random()*3000);
+      }
+    });
+  });
+  
+  // Armies (expedition forces)
+  const armies = [];
+  
+  G = {
+    scenario: sc,
+    date: { year: sc.year, month: sc.month, day: 1 },
+    cities, factions, generals, armies,
+    playerId: playerFactionId,
+    playerLeaderId: playerId,
+    weather: 'clear',
+    season: 'spring',
+    events: [],
+    log: [],
+    selectedCity: null,
+    selectedGenerals: [],
+    pendingEvents: [],
+    dayCount: 0,
+    rumors: [],
+    aiActions: [],
+  };
+  
+  // Initial relations between factions
+  setupInitialRelations(scenarioIdx);
+  
+  addLog(`⚔️ 게임 시작! ${sc.name} (${sc.year}년 ${sc.month}월)`, 'event');
+  addLog(`👤 주인공: ${generals[playerId].name} - ${playerChoice.startCity ? REGION_MAP[playerChoice.startCity].name : ''}에서 출발`, 'success');
+  
+  return G;
+}
+
+function setupInitialRelations(scenarioIdx) {
+  if(scenarioIdx === 1) { // 동탁의 폭정
+    // Everyone hostile to dong_zhuo
+    ['yuan_shao','cao_cao_f','player'].forEach(f => {
+      if(G.factions[f] && G.factions['dong_zhuo']) {
+        G.factions[f].relations['dong_zhuo'] = {type:'hostile',value:10};
+        G.factions['dong_zhuo'].relations[f] = {type:'hostile',value:10};
+      }
+    });
+  }
+}
+
+function addLog(msg, type='default') {
+  const d = G.date;
+  G.log.unshift({ date:`${d.year}년 ${d.month}월 ${d.day}일`, msg, type });
+  if(G.log.length > 200) G.log.pop();
+  renderLog();
+}
+
+// =============================================
+// RENDERING
+// =============================================
+
+function getPlayerFaction() { return G.factions[G.playerId]; }
+function getPlayerCities() { return Object.values(G.cities).filter(c => c.owner === G.playerId); }
+function getPlayerGenerals() { return Object.values(G.generals).filter(g => g.factionId === G.playerId && g.isRecruited); }
+
+function renderAll() {
+  renderTopBar();
+  renderMap();
+  renderCityInfo();
+  renderGeneralsList();
+  renderLog();
+}
+
+function renderTopBar() {
+  const pf = getPlayerFaction();
+  const pg = getPlayerGenerals();
+  const totalTroops = pg.reduce((s, g) => s + g.troops, 0) + 
+    getPlayerCities().reduce((s, c) => s + c.troops, 0);
+  
+  document.getElementById('statFaction').textContent = pf.name;
+  document.getElementById('statGold').textContent = pf.gold.toLocaleString();
+  document.getElementById('statFood').textContent = pf.food.toLocaleString();
+  document.getElementById('statHorse').textContent = pf.horses.toLocaleString();
+  document.getElementById('statTroops').textContent = totalTroops.toLocaleString();
+  document.getElementById('statCities').textContent = getPlayerCities().length;
+  document.getElementById('statFame').textContent = pf.fame;
+  
+  const d = G.date;
+  document.getElementById('dateDisplay').textContent = `${d.year}년 ${d.month}월 ${d.day}일`;
+  
+  const seasons = { spring:'봄', summer:'여름', fall:'가을', winter:'겨울' };
+  const weathers = { clear:'☀️', rain:'🌧️', snow:'❄️', fog:'🌫️', storm:'⛈️', wind:'💨' };
+  document.getElementById('weatherIcon').textContent = weathers[G.weather] || '☀️';
+  document.getElementById('seasonText').textContent = seasons[G.season] || '봄';
+  document.getElementById('seasonDisplay').textContent = `${seasons[G.season]} · ${getWeatherName(G.weather)}`;
+}
+
+function getWeatherName(w) {
+  return {clear:'맑음',rain:'비',snow:'눈',fog:'안개',storm:'폭풍',wind:'강풍'}[w]||'맑음';
+}
+
+function getFactionColor(factionId) {
+  const colors = {
+    player: '#ce4a4a',
+    neutral: '#555555',
+    yellow_turban: '#8b6000',
+    han_court: '#8b8b00',
+    gongsun: '#008b8b',
+    dong_zhuo: '#8b008b',
+    yuan_shao: '#00008b', yuan_shao_f: '#00008b',
+    cao_cao_f: '#1a3a8e',
+    liu_biao_f: '#006400',
+    sun_quan_f: '#8b0000',
+    liu_bei_f: '#006400',
+    wei: '#1a3a6e',
+    shu: '#1a5a2a',
+    wu: '#6e1a1a',
+    yuan: '#5a3a00',
+    dong: '#5a005a',
+    yellow: '#5a3a00',
+    han: '#5a5a00',
+  };
+  return colors[factionId] || '#555555';
+}
+
+function renderMap() {
+  const svg = document.getElementById('mapSvg');
+  svg.innerHTML = '';
+  
+  // Background
+  const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  bg.setAttribute('width', '800'); bg.setAttribute('height', '650');
+  bg.setAttribute('fill', '#0a1020');
+  svg.appendChild(bg);
+  
+  // Grid lines
+  for(let x = 0; x <= 800; x += 50) {
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', x); line.setAttribute('y1', 0);
+    line.setAttribute('x2', x); line.setAttribute('y2', 650);
+    line.setAttribute('stroke', 'rgba(201,168,76,0.04)');
+    line.setAttribute('stroke-width', '0.5');
+    svg.appendChild(line);
+  }
+  for(let y = 0; y <= 650; y += 50) {
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', 0); line.setAttribute('y1', y);
+    line.setAttribute('x2', 800); line.setAttribute('y2', y);
+    line.setAttribute('stroke', 'rgba(201,168,76,0.04)');
+    line.setAttribute('stroke-width', '0.5');
+    svg.appendChild(line);
+  }
+  
+  // Connection lines
+  REGIONS.forEach(r => {
+    r.adjacent.forEach(adjId => {
+      const adj = REGION_MAP[adjId];
+      if(!adj) return;
+      if(r.id < adjId) { // draw only once
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', r.x); line.setAttribute('y1', r.y);
+        line.setAttribute('x2', adj.x); line.setAttribute('y2', adj.y);
+        line.setAttribute('stroke', 'rgba(201,168,76,0.12)');
+        line.setAttribute('stroke-width', '1');
+        svg.appendChild(line);
+      }
+    });
+  });
+  
+  // Draw army movements
+  G.armies.forEach(army => {
+    const fromCity = G.cities[army.from];
+    const toCity = G.cities[army.to];
+    if(!fromCity || !toCity) return;
+    const fr = REGION_MAP[army.from];
+    const tr = REGION_MAP[army.to];
+    if(!fr || !tr) return;
+    
+    const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    arrow.setAttribute('x1', fr.x); arrow.setAttribute('y1', fr.y);
+    arrow.setAttribute('x2', tr.x); arrow.setAttribute('y2', tr.y);
+    arrow.setAttribute('stroke', army.factionId === G.playerId ? '#ffd700' : '#ff4444');
+    arrow.setAttribute('stroke-width', '2');
+    arrow.setAttribute('stroke-dasharray', '5,3');
+    arrow.setAttribute('class', 'attack-arrow');
+    svg.appendChild(arrow);
+    
+    // Arrow head
+    const dx = tr.x - fr.x, dy = tr.y - fr.y;
+    const dist = Math.sqrt(dx*dx+dy*dy);
+    const progress = Math.min(army.progress / army.totalDays, 0.9);
+    const px = fr.x + dx * progress;
+    const py = fr.y + dy * progress;
+    
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('cx', px); dot.setAttribute('cy', py);
+    dot.setAttribute('r', '5');
+    dot.setAttribute('fill', army.factionId === G.playerId ? '#ffd700' : '#ff4444');
+    dot.setAttribute('stroke', '#fff');
+    dot.setAttribute('stroke-width', '1');
+    svg.appendChild(dot);
+    
+    // Troops label
+    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    label.setAttribute('x', px); label.setAttribute('y', py - 8);
+    label.setAttribute('font-size', '8');
+    label.setAttribute('fill', '#fff');
+    label.setAttribute('text-anchor', 'middle');
+    label.textContent = `${(army.troops/1000).toFixed(1)}천`;
+    svg.appendChild(label);
+  });
+  
+  // Draw cities
+  REGIONS.forEach(r => {
+    const city = G.cities[r.id];
+    const color = getFactionColor(city.owner);
+    const isSelected = G.selectedCity === r.id;
+    const isPlayerCity = city.owner === G.playerId;
+    
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', 'city-node' + (isSelected ? ' city-selected' : ''));
+    g.setAttribute('data-city', r.id);
+    g.addEventListener('click', () => selectCity(r.id));
+    g.addEventListener('mouseenter', (e) => showCityTooltip(r.id, e));
+    g.addEventListener('mouseleave', hideCityTooltip);
+    
+    // City size based on importance
+    const size = r.population > 35000 ? 10 : r.population > 20000 ? 8 : 6;
+    
+    // Outer glow for player cities
+    if(isPlayerCity) {
+      const glow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      glow.setAttribute('cx', r.x); glow.setAttribute('cy', r.y);
+      glow.setAttribute('r', size + 5);
+      glow.setAttribute('fill', 'none');
+      glow.setAttribute('stroke', color);
+      glow.setAttribute('stroke-width', '1');
+      glow.setAttribute('opacity', '0.4');
+      g.appendChild(glow);
+    }
+    
+    // Main circle
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', r.x); circle.setAttribute('cy', r.y);
+    circle.setAttribute('r', size);
+    circle.setAttribute('fill', color);
+    circle.setAttribute('stroke', isSelected ? '#ffd700' : (isPlayerCity ? '#ffaa00' : 'rgba(255,255,255,0.3)'));
+    circle.setAttribute('stroke-width', isSelected ? '2.5' : '1');
+    circle.setAttribute('class', 'city-circle');
+    g.appendChild(circle);
+    
+    // City name
+    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    label.setAttribute('x', r.x); label.setAttribute('y', r.y + size + 10);
+    label.setAttribute('class', 'city-label');
+    label.setAttribute('font-size', r.population > 30000 ? '10' : '8');
+    label.setAttribute('fill', isPlayerCity ? '#ffd700' : '#ccc');
+    label.textContent = r.name;
+    g.appendChild(label);
+    
+    // Troops count
+    if(city.troops > 0) {
+      const tText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      tText.setAttribute('x', r.x); tText.setAttribute('y', r.y + 3);
+      tText.setAttribute('class', 'city-troops');
+      tText.setAttribute('font-size', '7');
+      tText.setAttribute('fill', '#ffd700');
+      tText.textContent = city.troops >= 1000 ? `${(city.troops/1000).toFixed(0)}k` : city.troops;
+      g.appendChild(tText);
+    }
+    
+    svg.appendChild(g);
+  });
+  
+  // Update mini map
+  const miniSvg = document.getElementById('miniMapSvg');
+  miniSvg.innerHTML = '';
+  REGIONS.forEach(r => {
+    const city = G.cities[r.id];
+    const color = getFactionColor(city.owner);
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('cx', r.x); dot.setAttribute('cy', r.y);
+    dot.setAttribute('r', '5');
+    dot.setAttribute('fill', color);
+    miniSvg.appendChild(dot);
+  });
+}
+
+function showCityTooltip(cityId, e) {
+  const city = G.cities[cityId];
+  const region = REGION_MAP[cityId];
+  const owner = G.factions[city.owner];
+  const tip = document.getElementById('hoverInfo');
+  tip.style.display = 'block';
+  
+  // Calculate distance if player has selected city
+  let distText = '';
+  if(G.selectedCity && G.selectedCity !== cityId) {
+    const dist = calcDistance(G.selectedCity, cityId);
+    distText = `<div style="color:#ffd700">거리: ${dist}일 행군</div>`;
+  }
+  
+  tip.innerHTML = `
+    <div style="color:var(--gold);font-family:'Noto Serif KR';font-size:13px;margin-bottom:5px">${region.name}</div>
+    <div style="color:${getFactionColor(city.owner)}">${owner ? owner.name : '중립'}</div>
+    <div>지형: ${region.terrain}</div>
+    <div>병력: ${city.troops.toLocaleString()}</div>
+    <div>방어: ${city.defense}</div>
+    ${distText}
+  `;
+  
+  const mapRect = document.getElementById('mapContainer').getBoundingClientRect();
+  tip.style.left = (e.clientX - mapRect.left + 15) + 'px';
+  tip.style.top = (e.clientY - mapRect.top + 15) + 'px';
+}
+
+function hideCityTooltip() {
+  document.getElementById('hoverInfo').style.display = 'none';
+}
+
+function calcDistance(fromId, toId) {
+  // BFS to find path
+  const queue = [[fromId, 0]];
+  const visited = new Set([fromId]);
+  while(queue.length > 0) {
+    const [cur, dist] = queue.shift();
+    if(cur === toId) return dist;
+    const region = REGION_MAP[cur];
+    if(region) {
+      region.adjacent.forEach(adjId => {
+        if(!visited.has(adjId) && REGION_MAP[adjId]) {
+          visited.add(adjId);
+          queue.push([adjId, dist + 1]);
+        }
+      });
+    }
+  }
+  return 99;
+}
+
+function selectCity(cityId) {
+  G.selectedCity = cityId;
+  renderMap();
+  renderCityInfo();
+}
+
+function renderCityInfo() {
+  const panel = document.getElementById('cityInfoContent');
+  if(!G.selectedCity) {
+    document.getElementById('selectedCityName').textContent = '-';
+    panel.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-dim);font-size:12px">지도에서 도시를 선택하세요</div>';
+    return;
+  }
+  
+  const city = G.cities[G.selectedCity];
+  const region = REGION_MAP[G.selectedCity];
+  const owner = G.factions[city.owner];
+  const isPlayer = city.owner === G.playerId;
+  const governor = city.governor ? G.generals[city.governor] : null;
+  
+  document.getElementById('selectedCityName').textContent = region.name;
+  
+  // Find generals in this city
+  const cityGenerals = Object.values(G.generals).filter(g => 
+    g.isRecruited && g.assignedCity === G.selectedCity && g.factionId === G.playerId
+  );
+  
+  let html = `
+    <div class="city-info-box">
+      <div class="city-info-name">${region.name} (${region.regionGroup})</div>
+      <div class="info-row"><span class="lbl">소유</span><span class="val" style="color:${getFactionColor(city.owner)}">${owner ? owner.name : '중립'}</span></div>
+      <div class="info-row"><span class="lbl">지형</span><span class="val">${region.terrain}</span></div>
+      <div class="info-row"><span class="lbl">주둔병</span><span class="val ${city.troops > 5000 ? 'good' : city.troops < 1000 ? 'bad' : ''}">${city.troops.toLocaleString()}</span></div>
+      <div class="info-row"><span class="lbl">방어력</span><span class="val">${city.defense}</span></div>
+      <div class="info-row"><span class="lbl">개발도</span><span class="val">${city.development}%</span></div>
+      <div class="info-row"><span class="lbl">안정도</span><span class="val ${city.stability > 60 ? 'good' : city.stability < 40 ? 'bad' : 'warn'}">${city.stability}%</span></div>
+  `;
+  
+  if(isPlayer) {
+    html += `
+      <div class="info-row"><span class="lbl">관리자</span><span class="val">${governor ? governor.name : '미임명'}</span></div>
+    `;
+  }
+  
+  // Adjacent cities with distance
+  html += `</div><div class="city-info-box"><div style="color:var(--gold);font-size:11px;margin-bottom:5px">인접 지역</div>`;
+  region.adjacent.forEach(adjId => {
+    const adjRegion = REGION_MAP[adjId];
+    const adjCity = G.cities[adjId];
+    if(!adjRegion || !adjCity) return;
+    const adjOwner = G.factions[adjCity.owner];
+    html += `
+      <div class="info-row" style="cursor:pointer" onclick="selectCity('${adjId}')">
+        <span class="lbl">${adjRegion.name}</span>
+        <span class="val" style="color:${getFactionColor(adjCity.owner)}">${adjOwner ? adjOwner.name : '중립'} (${adjCity.troops.toLocaleString()})</span>
+      </div>
+    `;
+  });
+  html += `</div>`;
+  
+  // Generals in city
+  if(cityGenerals.length > 0) {
+    html += `<div class="city-info-box"><div style="color:var(--gold);font-size:11px;margin-bottom:5px">주둔 장수</div>`;
+    cityGenerals.forEach(gen => {
+      html += `
+        <div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid rgba(58,46,26,0.2)">
+          <span style="font-size:16px">${gen.emoji}</span>
+          <span style="color:var(--gold)">${gen.name}</span>
+          <span style="color:var(--text-dim);font-size:10px">${gen.role === 'advisor' ? '[모사]' : '[장수]'}</span>
+          <span style="color:var(--text);font-size:10px">병력:${gen.troops.toLocaleString()}</span>
+        </div>
+      `;
+    });
+    html += `</div>`;
+  }
+  
+  panel.innerHTML = html;
+}
+
+function renderGeneralsList() {
+  const container = document.getElementById('generalsList');
+  const generals = getPlayerGenerals();
+  
+  if(generals.length === 0) {
+    container.innerHTML = '<div style="padding:10px;color:var(--text-dim);font-size:11px">장수가 없습니다</div>';
+    return;
+  }
+  
+  let html = '';
+  generals.forEach(gen => {
+    const loyaltyColor = gen.loyalty > 70 ? '#6bff6b' : gen.loyalty > 40 ? '#ffd700' : '#ff6b6b';
+    const isSelected = G.selectedGenerals.includes(gen.id);
+    html += `
+      <div class="general-card ${isSelected ? 'selected' : ''} ${gen.loyalty < 25 ? 'loyalty-warn' : ''}" onclick="toggleGeneralSelect('${gen.id}')">
+        <div class="gen-header">
+          <div class="gen-avatar" style="background:rgba(139,26,26,0.3);border:1px solid var(--border)">${gen.emoji}</div>
+          <div>
+            <div class="gen-name">${gen.name}</div>
+            <div style="font-size:10px;color:var(--text-dim)">${gen.assignedCity ? REGION_MAP[gen.assignedCity]?.name || '' : '미배치'} · Lv.${gen.level}</div>
+          </div>
+          <span class="gen-role">${getRoleName(gen.role)}</span>
+        </div>
+        <div class="gen-stats">
+          <div class="stat-box" title="무력: 전투 공격력"><div class="s-label">무력</div><div class="s-val" style="color:${gen.wu>=90?'#ff6b6b':gen.wu>=70?'#ffd700':'#e8d5a0'}">${gen.wu}</div></div>
+          <div class="stat-box" title="지력: 전술 보너스"><div class="s-label">지력</div><div class="s-val" style="color:${gen.zhi>=90?'#6bb5ff':gen.zhi>=70?'#a0c8ff':'#e8d5a0'}">${gen.zhi}</div></div>
+          <div class="stat-box" title="통솔: 병력 상한·사기"><div class="s-label">통솔</div><div class="s-val" style="color:${gen.tong>=90?'#6bff6b':gen.tong>=70?'#a0ffa0':'#e8d5a0'}">${gen.tong}</div></div>
+          <div class="stat-box" title="정치: 내정·외교 효율"><div class="s-label">정치</div><div class="s-val" style="color:${gen.pol>=90?'#ff9fff':gen.pol>=70?'#d0a0ff':'#e8d5a0'}">${gen.pol}</div></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:10px;flex-wrap:wrap;gap:2px">
+          <span style="color:var(--text-dim)">병력: <span style="color:var(--text)">${gen.troops.toLocaleString()}</span></span>
+          <span style="color:var(--text-dim)">충성: <span style="color:${loyaltyColor};font-weight:${gen.loyalty<25?'bold':''}">${gen.loyalty}${gen.loyalty<25?' ⚠️':''}</span></span>
+          <span style="color:var(--text-dim)">피로: <span style="color:${gen.fatigue > 60 ? '#ff6b6b' : '#6bff6b'}">${gen.fatigue}</span></span>
+        </div>
+        <div class="gen-loyalty" title="충성도 ${gen.loyalty}">
+          <div class="gen-loyalty-fill" style="width:${gen.loyalty}%;background:${loyaltyColor}"></div>
+        </div>
+        <div style="display:flex;gap:3px;margin-top:3px;flex-wrap:wrap">
+          ${gen.skills.map(s => `<span style="font-size:9px;background:rgba(201,168,76,0.1);border:1px solid var(--border);padding:1px 4px">${s}</span>`).join('')}
+        </div>
+        <div style="display:flex;gap:3px;margin-top:4px">
+          <button onclick="event.stopPropagation();openDeployGeneralModal('${gen.id}')" style="flex:1;font-size:9px;padding:2px 4px;background:rgba(26,90,42,0.4);border:1px solid #2d6e2d;color:#6bff6b;cursor:pointer">🏯 배치</button>
+          <button onclick="event.stopPropagation();openRewardGeneralModal('${gen.id}')" style="flex:1;font-size:9px;padding:2px 4px;background:rgba(201,168,76,0.15);border:1px solid var(--border);color:var(--gold);cursor:pointer">🎁 포상</button>
+        </div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
+
+function getRoleName(role) {
+  return {ruler:'군주',general:'장수',advisor:'모사',chancellor:'책사'}[role]||role;
+}
+
+function toggleGeneralSelect(genId) {
+  const idx = G.selectedGenerals.indexOf(genId);
+  if(idx >= 0) G.selectedGenerals.splice(idx, 1);
+  else G.selectedGenerals.push(genId);
+  renderGeneralsList();
+}
+
+function renderLog() {
+  const el = document.getElementById('eventLog');
+  el.innerHTML = G.log.slice(0, 50).map(entry => `
+    <div class="log-entry">
+      <span class="log-date">${entry.date}</span>
+      <span class="log-msg ${entry.type}">${entry.msg}</span>
+    </div>
+  `).join('');
+}
+
+function switchRightTab(tab, el) {
+  document.querySelectorAll('.right-tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  el.classList.add('active');
+  
+  if(tab === 'armies') renderArmiesList();
+  if(tab === 'advisors') renderAdvisorsList();
+  if(tab === 'intel') renderIntel();
+}
+
+function renderArmiesList() {
+  const container = document.getElementById('armiesList');
+  const myArmies = G.armies.filter(a => a.factionId === G.playerId);
+  
+  if(myArmies.length === 0) {
+    container.innerHTML = '<div style="padding:10px;color:var(--text-dim);font-size:11px">출정 중인 군대가 없습니다</div>';
+    return;
+  }
+  
+  container.innerHTML = myArmies.map(army => {
+    const fromR = REGION_MAP[army.from];
+    const toR = REGION_MAP[army.to];
+    return `
+      <div style="background:var(--bg-card);border:1px solid var(--border);padding:8px;margin:3px">
+        <div style="color:var(--gold);font-size:12px">${fromR?.name} → ${toR?.name}</div>
+        <div style="font-size:11px;margin-top:3px">
+          <span style="color:var(--text-dim)">병력: </span><span>${army.troops.toLocaleString()}</span>
+          <span style="color:var(--text-dim);margin-left:8px">도착: </span><span>${army.progress}/${army.totalDays}일</span>
+        </div>
+        <div style="font-size:10px;color:var(--text-dim)">전술: ${army.tactic}</div>
+        <button onclick="cancelArmy('${army.id}')" style="margin-top:5px;font-size:10px;background:rgba(139,26,26,0.3);border:1px solid var(--red);color:var(--text);padding:2px 8px;cursor:pointer">후퇴</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderAdvisorsList() {
+  const container = document.getElementById('advisorsList');
+  const advisors = getPlayerGenerals().filter(g => g.role === 'advisor' || g.role === 'chancellor');
+  
+  if(advisors.length === 0) {
+    container.innerHTML = '<div style="padding:10px;color:var(--text-dim);font-size:11px">모사가 없습니다</div>';
+    return;
+  }
+  
+  container.innerHTML = advisors.map(adv => `
+    <div class="general-card" onclick="getAdvisorAdvice('${adv.id}')">
+      <div class="gen-header">
+        <div style="font-size:20px">${adv.emoji}</div>
+        <div>
+          <div class="gen-name">${adv.name}</div>
+          <div style="font-size:10px;color:var(--text-dim)">지력 ${adv.zhi} · 정치 ${adv.pol}</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--text-dim);margin-top:3px">특기: ${adv.skills.join(', ')}</div>
+      <div style="font-size:10px;color:var(--gold);margin-top:3px;cursor:pointer">💬 조언 구하기</div>
+    </div>
+  `).join('');
+}
+
+function renderIntel() {
+  const container = document.getElementById('intelContent');
+  const advisors = getPlayerGenerals().filter(g => g.role === 'advisor');
+  if(advisors.length === 0) {
+    container.innerHTML = '<div style="padding:10px;color:var(--text-dim);font-size:11px">모사가 없어 첩보를 수집할 수 없습니다</div>';
+    return;
+  }
+  
+  const bestAdvisor = advisors.sort((a,b) => b.zhi - a.zhi)[0];
+  const factions = Object.values(G.factions).filter(f => f.id !== G.playerId);
+  
+  let html = `<div style="padding:8px"><div style="color:var(--gold);font-size:11px;margin-bottom:8px">📊 ${bestAdvisor.name}의 정보 보고</div>`;
+  
+  factions.forEach(f => {
+    const cities = Object.values(G.cities).filter(c => c.owner === f.id);
+    const totalTroops = cities.reduce((s,c) => s+c.troops, 0);
+    html += `
+      <div style="background:var(--bg-card);border:1px solid var(--border);padding:6px;margin-bottom:5px">
+        <div style="color:${getFactionColor(f.id)};font-size:12px">${f.name}</div>
+        <div style="font-size:10px;color:var(--text-dim)">영지: ${cities.length}개 · 병력: ${totalTroops.toLocaleString()}</div>
+        <div style="font-size:10px;color:var(--text-dim)">금: ${f.gold.toLocaleString()} · 군량: ${f.food.toLocaleString()}</div>
+        <div style="font-size:10px">
+          관계: <span class="${getRelationClass(G.playerId, f.id)}">${getRelationName(G.playerId, f.id)}</span>
+        </div>
+      </div>
+    `;
+  });
+  
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function getRelationClass(fromId, toId) {
+  const rel = G.factions[fromId]?.relations[toId];
+  if(!rel) return 'rel-neutral';
+  return {allied:'rel-allied',neutral:'rel-neutral',hostile:'rel-hostile',vassal:'rel-vassal'}[rel.type]||'rel-neutral';
+}
+
+function getRelationName(fromId, toId) {
+  const rel = G.factions[fromId]?.relations[toId];
+  if(!rel) return '중립';
+  return {allied:'동맹',neutral:'중립',hostile:'적대',vassal:'속국'}[rel.type]||'중립';
+}
+
+// =============================================
+// NEXT DAY SYSTEM
+// =============================================
+function nextDay() {
+  G.dayCount++;
+  G.date.day++;
+  if(G.date.day > 30) {
+    G.date.day = 1;
+    G.date.month++;
+    if(G.date.month > 12) {
+      G.date.month = 1;
+      G.date.year++;
+    }
+    processMonthly();
+  }
+  if(G.date.day % 10 === 0) processTenDays();
+  
+  // Update weather and season
+  updateWeatherSeason();
+  
+  // Process army movements
+  processArmies();
+  
+  // AI turns
+  processAI();
+  
+  // Random events (every 3 days, 15% chance)
+  if(G.dayCount % 3 === 0 && Math.random() < 0.15) {
+    triggerRandomEvent();
+  }
+  
+  // Advisor advice (every 5 days)
+  if(G.dayCount % 5 === 0) {
+    giveAdvisorAdvice();
+  }
+  
+  // Food consumption
+  processFoodConsumption();
+  
+  // Loyalty changes
+  processLoyalty();
+  
+  // Rebellion check
+  checkRebellion();
+  
+  // Harvest / tribute (every 30 days)
+  if(G.date.day === 1) {
+    processHarvest();
+  }
+  
+  renderAll();
+}
+
+function updateWeatherSeason() {
+  const m = G.date.month;
+  if(m >= 3 && m <= 5) G.season = 'spring';
+  else if(m >= 6 && m <= 8) G.season = 'summer';
+  else if(m >= 9 && m <= 11) G.season = 'fall';
+  else G.season = 'winter';
+  
+  // Random weather
+  const weathers = { spring:['clear','clear','clear','rain','fog'], summer:['clear','clear','storm','rain','wind'], fall:['clear','clear','rain','fog','wind'], winter:['clear','snow','snow','fog','wind'] };
+  const wlist = weathers[G.season];
+  if(Math.random() < 0.15) {
+    G.weather = wlist[Math.floor(Math.random()*wlist.length)];
+  }
+}
+
+function processArmies() {
+  const toRemove = [];
+  G.armies.forEach(army => {
+    army.progress++;
+    
+    // Increase fatigue
+    army.generals.forEach(gid => {
+      const gen = G.generals[gid];
+      if(gen) gen.fatigue = Math.min(100, gen.fatigue + 5);
+    });
+    
+    // Reduce food
+    const foodCost = Math.floor(army.troops * 0.01);
+    if(army.factionId === G.playerId) {
+      G.factions[G.playerId].food = Math.max(0, G.factions[G.playerId].food - foodCost);
+    }
+    
+    if(army.progress >= army.totalDays) {
+      // Arrived - initiate battle
+      conductBattle(army);
+      toRemove.push(army.id);
+    }
+  });
+  G.armies = G.armies.filter(a => !toRemove.includes(a.id));
+}
+
+function conductBattle(army) {
+  const targetCity = G.cities[army.to];
+  const targetFactionId = targetCity.owner;
+  
+  if(targetFactionId === army.factionId) {
+    // Friendly city - reinforce
+    if(army.factionId === G.playerId) {
+      targetCity.troops += army.troops;
+      addLog(`🏯 ${REGION_MAP[army.to].name}에 증원군 ${army.troops.toLocaleString()}명 도착`, 'success');
+    }
+    return;
+  }
+  
+  // Battle calculation
+  const attackerTroops = army.troops;
+  const defenderTroops = targetCity.troops;
+  const defBonus = targetCity.defense / 100;
+  const terrainBonus = getTerrainBonus(REGION_MAP[army.to].terrain, army.tactic);
+  
+  // Attacker generals bonus
+  let attackerBonus = 1.0;
+  army.generals.forEach(gid => {
+    const gen = G.generals[gid];
+    if(gen) {
+      attackerBonus += gen.wu * 0.003 + gen.tong * 0.002;
+      if(gen.role === 'advisor') attackerBonus += gen.zhi * 0.002;
+    }
+  });
+  
+  // Tactic bonus
+  const tacticBonus = getTacticBonus(army.tactic, REGION_MAP[army.to].terrain, G.weather);
+  attackerBonus *= tacticBonus;
+  
+  // Weather effect
+  const weatherEffect = getWeatherEffect(G.weather, army.factionId === G.playerId);
+  
+  const attackPower = attackerTroops * attackerBonus * weatherEffect;
+  const defensePower = defenderTroops * (1 + defBonus) * 1.1; // defender always has slight advantage
+  
+  const attackerWinChance = attackPower / (attackPower + defensePower);
+  const rand = Math.random();
+  
+  const isPlayerInvolved = army.factionId === G.playerId || targetFactionId === G.playerId;
+  
+  if(rand < attackerWinChance) {
+    // Attacker wins
+    const losses = Math.floor(defenderTroops * (0.3 + Math.random() * 0.4));
+    const attackerLoss = Math.floor(attackerTroops * (0.15 + Math.random() * 0.2));
+    const remainingTroops = attackerTroops - attackerLoss;
+    
+    // Check surrender
+    const surrenderChance = defenderTroops < 1000 ? 0.4 : 0.1;
+    const surrendered = Math.random() < surrenderChance;
+    const capturedTroops = surrendered ? Math.floor(defenderTroops * 0.5) : 0;
+    
+    const prevOwner = targetCity.owner;
+    targetCity.owner = army.factionId;
+    targetCity.troops = remainingTroops + capturedTroops;
+    
+    if(army.factionId === G.playerId) {
+      G.factions[G.playerId].fame += 10;
+      if(surrendered) {
+        G.factions[G.playerId].troops = (G.factions[G.playerId].troops || 0) + capturedTroops;
+        addLog(`🎉 ${REGION_MAP[army.to].name} 점령! 항복으로 ${capturedTroops}명 흡수`, 'success');
+      } else {
+        addLog(`⚔️ ${REGION_MAP[army.to].name} 점령! 공격손실: ${attackerLoss.toLocaleString()}명`, 'success');
+      }
+    } else if(targetFactionId === G.playerId) {
+      G.factions[G.playerId].fame -= 5;
+      addLog(`💥 ${REGION_MAP[army.to].name}이(가) ${G.factions[army.factionId]?.name}에게 함락!`, 'combat');
+      showNotification(`⚠️ ${REGION_MAP[army.to].name} 함락!`, 'danger');
+    } else {
+      addLog(`⚔️ ${G.factions[army.factionId]?.name}이(가) ${REGION_MAP[army.to].name} 점령`, 'combat');
+    }
+    
+    // Update general troops
+    army.generals.forEach(gid => {
+      const gen = G.generals[gid];
+      if(gen) {
+        gen.troops = Math.max(0, gen.troops - Math.floor(attackerLoss / army.generals.length));
+        gen.assignedCity = army.to;
+        gen.exp += 50;
+        levelUpCheck(gen);
+      }
+    });
+    
+  } else {
+    // Defender wins
+    const attackerLoss = Math.floor(attackerTroops * (0.3 + Math.random() * 0.4));
+    const defenderLoss = Math.floor(defenderTroops * (0.1 + Math.random() * 0.2));
+    targetCity.troops -= defenderLoss;
+    
+    army.generals.forEach(gid => {
+      const gen = G.generals[gid];
+      if(gen) {
+        gen.troops = Math.max(0, gen.troops - Math.floor(attackerLoss / army.generals.length));
+        gen.assignedCity = army.from;
+      }
+    });
+    
+    if(army.factionId === G.playerId) {
+      addLog(`💔 ${REGION_MAP[army.to].name} 공략 실패! 손실: ${attackerLoss.toLocaleString()}명`, 'combat');
+    } else if(targetFactionId === G.playerId) {
+      addLog(`🛡️ ${REGION_MAP[army.to].name} 방어 성공!`, 'success');
+    } else {
+      addLog(`⚔️ ${G.factions[army.factionId]?.name}의 ${REGION_MAP[army.to].name} 공략 실패`, 'default');
+    }
+  }
+}
+
+function getTacticBonus(tactic, terrain, weather) {
+  const bonuses = {
+    normal: 1.0,
+    surprise: 1.3, // 기습
+    ambush: 1.25, // 매복
+    fire: terrain === '평야' || terrain === '강변' ? 1.4 : 0.9, // 화공
+    feint: 1.15, // 유인
+    envelop: 1.2, // 포위
+    siege: 0.9, // 공성
+  };
+  let bonus = bonuses[tactic] || 1.0;
+  if(tactic === 'fire' && (weather === 'rain' || weather === 'snow')) bonus *= 0.6;
+  if(tactic === 'surprise' && weather === 'fog') bonus *= 1.2;
+  return bonus;
+}
+
+function getTerrainBonus(terrain, tactic) {
+  const def = { 산악: 1.3, 고원: 1.2, 분지: 1.15, 강변: 1.1, 평야: 1.0, 연안: 1.0, 열대: 1.1, 사막: 0.9 };
+  return def[terrain] || 1.0;
+}
+
+function getWeatherEffect(weather, isAttacker) {
+  const eff = { clear: 1.0, rain: 0.9, snow: 0.85, fog: isAttacker ? 1.1 : 0.95, storm: 0.75, wind: 0.95 };
+  return eff[weather] || 1.0;
+}
+
+function levelUpCheck(gen) {
+  const expNeeded = gen.level * 100;
+  if(gen.exp >= expNeeded) {
+    gen.level++;
+    gen.exp -= expNeeded;
+    // Stat increase
+    gen.wu = Math.min(100, gen.wu + Math.floor(Math.random()*3));
+    gen.zhi = Math.min(100, gen.zhi + Math.floor(Math.random()*3));
+    gen.tong = Math.min(100, gen.tong + Math.floor(Math.random()*2));
+    gen.pol = Math.min(100, gen.pol + Math.floor(Math.random()*2));
+    if(gen.factionId === G.playerId) {
+      addLog(`⬆️ ${gen.name} 레벨 업! Lv.${gen.level}`, 'success');
+    }
+  }
+}
+
+function processMonthly() {
+  // Gold/food income from cities
+  getPlayerCities().forEach(city => {
+    const income = Math.floor(city.development * city.population / 1000);
+    const food = Math.floor(city.development * city.population / 800);
+    G.factions[G.playerId].gold += income;
+    G.factions[G.playerId].food += food;
+  });
+  
+  // Other factions income
+  Object.values(G.factions).forEach(f => {
+    if(f.id === G.playerId) return;
+    const cities = Object.values(G.cities).filter(c => c.owner === f.id);
+    cities.forEach(city => {
+      f.gold += Math.floor(city.development * city.population / 1000);
+      f.food += Math.floor(city.development * city.population / 800);
+    });
+  });
+  
+  addLog(`💰 ${G.date.month}월 - 세수 수입`, 'success');
+}
+
+function processTenDays() {
+  // Small food consumption
+  const gens = getPlayerGenerals();
+  const dailyFood = gens.reduce((s,g) => s + Math.floor(g.troops * 0.05), 0);
+  G.factions[G.playerId].food = Math.max(0, G.factions[G.playerId].food - dailyFood);
+  
+  if(G.factions[G.playerId].food < 1000) {
+    addLog('⚠️ 군량이 부족합니다!', 'warning');
+    showNotification('⚠️ 군량 부족!', 'danger');
+    // Troop morale drops
+    getPlayerGenerals().forEach(g => { g.morale = Math.max(0, g.morale - 5); });
+  }
+}
+
+function processHarvest() {
+  // Random harvest
+  const harvestRate = 0.7 + Math.random() * 0.8; // 0.7~1.5
+  const baseHarvest = getPlayerCities().reduce((s,c) => s + c.population, 0) / 10;
+  const harvest = Math.floor(baseHarvest * harvestRate);
+  G.factions[G.playerId].food += harvest;
+  
+  const quality = harvestRate > 1.2 ? '풍년' : harvestRate < 0.9 ? '흉년' : '평년';
+  addLog(`🌾 수확기 - ${quality}! 군량 +${harvest.toLocaleString()}`, harvestRate > 1.2 ? 'success' : harvestRate < 0.9 ? 'warning' : 'default');
+}
+
+function processLoyalty() {
+  getPlayerGenerals().forEach(gen => {
+    if(gen.id === G.playerLeaderId) return;
+    // Loyalty changes based on various factors
+    let change = 0;
+    if(G.factions[G.playerId].gold > 10000) change += 1;
+    if(G.factions[G.playerId].food < 2000) change -= 2;
+    if(gen.fatigue > 70) change -= 1;
+    // Random small fluctuation
+    change += Math.floor(Math.random()*3) - 1;
+    gen.loyalty = Math.max(0, Math.min(100, gen.loyalty + change));
+  });
+}
+
+function checkRebellion() {
+  getPlayerGenerals().forEach(gen => {
+    if(gen.id === G.playerLeaderId) return;
+
+    // Resignation: loyalty < 25, becomes free agent
+    if(gen.loyalty < 25 && gen.loyalty >= 10 && Math.random() < 0.08) {
+      addLog(`😤 ${gen.name}이(가) 불만을 품고 사직했다! (충성 ${gen.loyalty})`, 'warning');
+      showNotification(`😤 ${gen.name} 사직!`, 'danger');
+      const pf = G.factions[G.playerId];
+      pf.generals = pf.generals.filter(g => g !== gen.id);
+      gen.isRecruited = false;
+      gen.factionId = null;
+      gen.freeAgent = true;
+      gen.rebels = false;
+      if(gen.assignedCity && G.cities[gen.assignedCity] && G.cities[gen.assignedCity].owner === G.playerId) {
+        G.cities[gen.assignedCity].troops += Math.floor(gen.troops * 0.5);
+      }
+      gen.troops = 0;
+      gen.assignedCity = null;
+      return;
+    }
+
+    // Rebellion: loyalty < 10
+    if(gen.loyalty < 10 && Math.random() < 0.12) {
+      addLog(`🔥 ${gen.name}이(가) 반란을 일으켰다!`, 'warning');
+      showNotification(`🔥 ${gen.name} 반란 발생!`, 'danger');
+      const pf = G.factions[G.playerId];
+      pf.generals = pf.generals.filter(g => g !== gen.id);
+      gen.isRecruited = false;
+      gen.factionId = 'neutral';
+      gen.rebels = true;
+      gen.freeAgent = false;
+      if(gen.assignedCity) {
+        G.cities[gen.assignedCity].owner = 'neutral';
+        G.cities[gen.assignedCity].troops += gen.troops;
+      }
+      gen.troops = 0;
+      gen.assignedCity = null;
+    }
+  });
+}
+
+function processAI() {
+  // AI factions act
+  Object.values(G.factions).forEach(f => {
+    if(f.id === G.playerId) return;
+    const fCities = Object.values(G.cities).filter(c => c.owner === f.id);
+    if(fCities.length === 0) return;
+
+    // AI loyalty management: reward generals with low loyalty
+    f.generals.forEach(gid => {
+      const gen = G.generals[gid];
+      if(!gen || !gen.isRecruited) return;
+      if(gen.loyalty < 50 && f.gold >= 500 && Math.random() < 0.3) {
+        const reward = Math.floor(200 + Math.random() * 500);
+        f.gold = Math.max(0, f.gold - reward);
+        gen.loyalty = Math.min(100, gen.loyalty + Math.floor(reward / 100));
+      }
+      // Natural loyalty drift for AI generals
+      let drift = (Math.random() * 3) - 1;
+      if(f.food < 2000) drift -= 2;
+      gen.loyalty = Math.max(0, Math.min(100, gen.loyalty + drift));
+    });
+
+    // AI acts every 3-7 days based on random
+    if(Math.random() < 0.12) {
+      aiDecideAction(f, fCities);
+    }
+  });
+}
+
+function aiDecideAction(faction, cities) {
+  // Find best general (advisor) for strategic thinking
+  const advisors = faction.generals.map(gid => G.generals[gid]).filter(g => g && g.role === 'advisor');
+  const bestAdvisorZhi = advisors.length > 0 ? Math.max(...advisors.map(a => a.zhi)) : 40;
+  
+  // Higher zhi = better AI decisions
+  const strategicThinking = bestAdvisorZhi / 100;
+  
+  // Options: attack, develop, recruit, diplomacy
+  const roll = Math.random();
+  
+  if(roll < 0.3 + strategicThinking * 0.2) {
+    // Attack
+    aiAttack(faction, cities, bestAdvisorZhi);
+  } else if(roll < 0.6) {
+    // Develop / recruit troops
+    cities.forEach(city => {
+      if(city.troops < city.maxTroops * 0.5) {
+        city.troops = Math.min(city.maxTroops, city.troops + Math.floor(1000 + Math.random() * 2000));
+      }
+    });
+  }
+}
+
+function aiAttack(faction, cities, advisorZhi) {
+  // Find weakest adjacent enemy city
+  let bestTarget = null;
+  let bestScore = -1;
+  let attackFrom = null;
+  
+  cities.forEach(city => {
+    REGION_MAP[city.id]?.adjacent.forEach(adjId => {
+      const adjCity = G.cities[adjId];
+      if(!adjCity || adjCity.owner === faction.id) return;
+      
+      // Score: higher = better target (weaker enemy, closer)
+      const score = (1000 - adjCity.troops) / 1000 * (advisorZhi / 100 + Math.random());
+      if(score > bestScore && city.troops > adjCity.troops * 0.8) {
+        bestScore = score;
+        bestTarget = adjId;
+        attackFrom = city.id;
+      }
+    });
+  });
+  
+  if(bestTarget && attackFrom) {
+    const attackCity = G.cities[attackFrom];
+    const sendTroops = Math.floor(attackCity.troops * (0.4 + Math.random() * 0.3));
+    if(sendTroops < 500) return;
+    
+    attackCity.troops -= sendTroops;
+    
+    // Choose tactic based on advisor intelligence
+    const tactics = advisorZhi > 80 ? ['surprise', 'ambush', 'fire', 'envelop'] : ['normal', 'normal', 'surprise'];
+    const tactic = tactics[Math.floor(Math.random() * tactics.length)];
+    
+    const dist = calcDistance(attackFrom, bestTarget);
+    
+    G.armies.push({
+      id: 'army_' + Date.now() + Math.random(),
+      factionId: faction.id,
+      from: attackFrom, to: bestTarget,
+      troops: sendTroops,
+      generals: faction.generals.filter(gid => {
+        const g = G.generals[gid];
+        return g && g.assignedCity === attackFrom;
+      }).slice(0, 2),
+      tactic: tactic,
+      progress: 0,
+      totalDays: Math.max(1, dist),
+      food: sendTroops * 5,
+    });
+    
+    const targetName = REGION_MAP[bestTarget]?.name;
+    const fromName = REGION_MAP[attackFrom]?.name;
+    if(G.cities[bestTarget].owner === G.playerId) {
+      addLog(`⚠️ ${faction.name}이(가) ${fromName}에서 ${targetName}을(를) 공격!`, 'warning');
+      showNotification(`⚔️ ${faction.name}이 ${targetName}을 공격!`, 'danger');
+    }
+  }
+}
+
+// =============================================
+// RANDOM EVENTS
+// =============================================
+const RANDOM_EVENTS = [
+  { id:'plague', title:'역병 창궐', icon:'🦠', desc:'역병이 퍼져 백성들이 쓰러지고 있습니다!', effect: (g) => {
+    const cities = getPlayerCities();
+    if(cities.length === 0) return;
+    const city = cities[Math.floor(Math.random()*cities.length)];
+    city.troops = Math.floor(city.troops * 0.7);
+    city.population = Math.floor(city.population * 0.9);
+    g.factions[g.playerId].food -= 2000;
+    addLog(`🦠 역병 창궐! ${REGION_MAP[city.id].name} 피해`, 'warning');
+  }},
+  { id:'famine', title:'대기근', icon:'🌵', desc:'가뭄이 들어 농작물이 모두 말라버렸습니다!', effect: (g) => {
+    g.factions[g.playerId].food = Math.floor(g.factions[g.playerId].food * 0.6);
+    addLog('🌵 대기근! 군량이 급감했습니다', 'warning');
+  }},
+  { id:'desertion', title:'탈영 발생', icon:'🏃', desc:'군량 부족으로 병사들이 탈영하고 있습니다!', effect: (g) => {
+    getPlayerGenerals().forEach(gen => {
+      gen.troops = Math.floor(gen.troops * 0.85);
+      gen.morale = Math.max(0, gen.morale - 15);
+    });
+    addLog('🏃 탈영 발생! 병력과 사기가 하락', 'warning');
+  }},
+  { id:'windfall', title:'뜻밖의 재물', icon:'💰', desc:'숨겨진 보물 창고를 발견했습니다!', effect: (g) => {
+    const bonus = 3000 + Math.floor(Math.random() * 5000);
+    g.factions[g.playerId].gold += bonus;
+    addLog(`💰 보물 발견! 금 +${bonus}`, 'success');
+  }},
+  { id:'volunteer', title:'지원병 합류', icon:'⚔️', desc:'의기에 감복한 백성들이 자원입대하고 있습니다!', effect: (g) => {
+    const bonus = 1000 + Math.floor(Math.random() * 2000);
+    const cities = getPlayerCities();
+    if(cities.length > 0) {
+      const city = cities[Math.floor(Math.random()*cities.length)];
+      city.troops += bonus;
+    }
+    addLog(`⚔️ 의용군 ${bonus}명 합류!`, 'success');
+  }},
+  { id:'surrender', title:'적군 항복', icon:'🏳️', desc:'적 장수가 항복을 청해오고 있습니다!', effect: (g) => {
+    const neutralGenerals = Object.values(G.generals).filter(gen => !gen.isRecruited && gen.role !== 'ruler');
+    if(neutralGenerals.length > 0) {
+      const gen = neutralGenerals[Math.floor(Math.random()*neutralGenerals.length)];
+      gen.isRecruited = true;
+      gen.factionId = G.playerId;
+      gen.loyalty = 50 + Math.floor(Math.random()*20);
+      gen.troops = 500 + Math.floor(Math.random()*1000);
+      G.factions[G.playerId].generals.push(gen.id);
+      addLog(`🏳️ ${gen.name}이(가) 항복하여 합류!`, 'success');
+      showNotification(`🎉 ${gen.name} 합류!`, '');
+    }
+  }},
+  { id:'flood', title:'홍수 피해', icon:'🌊', desc:'강이 범람하여 주요 지역에 피해가 발생했습니다!', effect: (g) => {
+    const cities = getPlayerCities().filter(c => REGION_MAP[c.id]?.terrain === '강변');
+    if(cities.length > 0) {
+      const city = cities[Math.floor(Math.random()*cities.length)];
+      city.development = Math.max(0, city.development - 15);
+      g.factions[g.playerId].food -= 1500;
+      addLog(`🌊 홍수! ${REGION_MAP[city.id].name} 피해`, 'warning');
+    }
+  }},
+  { id:'spy', title:'간첩 적발', icon:'🕵️', desc:'적의 간첩이 침투하려 했으나 적발했습니다!', effect: (g) => {
+    g.factions[g.playerId].fame += 5;
+    addLog('🕵️ 적 간첩 적발! 명성 +5', 'success');
+  }},
+  { id:'alliance', title:'동맹 제의', icon:'🤝', desc:'인근 세력에서 동맹을 제의해왔습니다!', effect: (g) => {
+    // Show diplomacy
+    const enemyFactions = Object.values(G.factions).filter(f => f.id !== G.playerId && Object.values(G.cities).some(c => c.owner === f.id));
+    if(enemyFactions.length > 0) {
+      const faction = enemyFactions[Math.floor(Math.random()*enemyFactions.length)];
+      showEventChoice(`${faction.name}에서 동맹을 제의합니다`, [
+        { text:'수락', action: () => { G.factions[G.playerId].relations[faction.id] = {type:'allied',value:75}; faction.relations[G.playerId] = {type:'allied',value:75}; addLog(`🤝 ${faction.name}과 동맹 체결!`, 'diplo'); } },
+        { text:'거절', action: () => { addLog(`❌ ${faction.name}의 동맹 제의 거절`, 'default'); } }
+      ]);
+    }
+  }},
+];
+
+function triggerRandomEvent() {
+  const event = RANDOM_EVENTS[Math.floor(Math.random() * RANDOM_EVENTS.length)];
+  showEventBanner(event);
+}
+
+function showEventBanner(event) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.style.zIndex = '650';
+  
+  overlay.innerHTML = `
+    <div class="event-banner">
+      <div style="font-size:40px;margin-bottom:10px">${event.icon}</div>
+      <h2>${event.title}</h2>
+      <p>${event.desc}</p>
+      <button class="btn btn-gold" onclick="this.closest('.modal-overlay').remove(); applyEvent('${event.id}')">확인</button>
+    </div>
+  `;
+  
+  document.body.appendChild(overlay);
+}
+
+function applyEvent(eventId) {
+  const event = RANDOM_EVENTS.find(e => e.id === eventId);
+  if(event) event.effect(G);
+  renderAll();
+}
+
+function showEventChoice(msg, choices) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.style.zIndex = '650';
+  
+  overlay.innerHTML = `
+    <div class="event-banner">
+      <h2>📜 사건 발생</h2>
+      <p>${msg}</p>
+      <div style="display:flex;gap:10px;justify-content:center">
+        ${choices.map((c,i) => `<button class="btn btn-gold" onclick="this.closest('.modal-overlay').remove(); eventChoices[${i}].action()">${c.text}</button>`).join('')}
+      </div>
+    </div>
+  `;
+  
+  window.eventChoices = choices;
+  document.body.appendChild(overlay);
+}
+
+// =============================================
+// MODALS
+// =============================================
+
+function showModal(content) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'activeModal';
+  overlay.innerHTML = content;
+  document.getElementById('modalsContainer').appendChild(overlay);
+  return overlay;
+}
+
+function closeModal() {
+  const modal = document.getElementById('activeModal');
+  if(modal) modal.remove();
+}
+
+// ATTACK MODAL
+function openAttackModal() {
+  if(!G.selectedCity) {
+    showNotification('출발 지역을 선택하세요', 'danger');
+    return;
+  }
+  const fromCity = G.cities[G.selectedCity];
+  if(fromCity.owner !== G.playerId) {
+    showNotification('우리 영토에서만 출전할 수 있습니다', 'danger');
+    return;
+  }
+  
+  const adj = REGION_MAP[G.selectedCity].adjacent;
+  const adjOptions = adj.map(id => {
+    const c = G.cities[id];
+    const r = REGION_MAP[id];
+    if(!r) return '';
+    const dist = calcDistance(G.selectedCity, id);
+    return `<option value="${id}">${r.name} (${G.factions[c.owner]?.name || '중립'}, 병력:${c.troops.toLocaleString()}, ${dist}일)</option>`;
+  }).join('');
+  
+  const genOptions = getPlayerGenerals().filter(g => g.assignedCity === G.selectedCity || !g.assignedCity).map(g =>
+    `<label style="display:flex;align-items:center;gap:5px;padding:3px 0;cursor:pointer">
+      <input type="checkbox" value="${g.id}" style="cursor:pointer">
+      ${g.emoji} ${g.name} [${getRoleName(g.role)}] 무${g.wu}/지${g.zhi} 병력:${g.troops.toLocaleString()}
+    </label>`
+  ).join('');
+  
+  const pf = G.factions[G.playerId];
+  
+  showModal(`
+    <div class="modal-box">
+      <div class="modal-header">⚔️ 출전 명령 - ${REGION_MAP[G.selectedCity].name}에서 출발
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <div style="color:var(--gold);font-size:11px;margin-bottom:5px">공격 목표</div>
+            <select id="attackTarget" style="width:100%">${adjOptions}</select>
+          </div>
+          <div>
+            <div style="color:var(--gold);font-size:11px;margin-bottom:5px">전술</div>
+            <select id="attackTactic" style="width:100%">
+              <option value="normal">정면공격 (기본)</option>
+              <option value="surprise">기습 (+30% 공격력)</option>
+              <option value="ambush">매복 (+25%)</option>
+              <option value="fire">화공 (강변/평야 +40%)</option>
+              <option value="feint">유인 (+15%)</option>
+              <option value="envelop">포위 (+20%)</option>
+              <option value="siege">공성전 (-10%, 방어력 무시)</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:10px">
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">출전 장수 (주둔지에서 선택)</div>
+          <div style="background:rgba(0,0,0,0.3);padding:8px;max-height:150px;overflow-y:auto">
+            ${genOptions || '<div style="color:var(--text-dim)">이 지역에 배치된 장수가 없습니다</div>'}
+          </div>
+        </div>
+        <div style="margin-top:10px">
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">출전 병력 (주둔병: ${fromCity.troops.toLocaleString()})</div>
+          <input type="range" id="attackTroops" min="100" max="${fromCity.troops}" value="${Math.floor(fromCity.troops*0.5)}" oninput="document.getElementById('attackTroopsVal').textContent=this.value">
+          <div style="text-align:right;color:var(--gold)"><span id="attackTroopsVal">${Math.floor(fromCity.troops*0.5)}</span>명</div>
+        </div>
+        <div style="margin-top:10px">
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">휴대 군량 (보유: ${pf.food.toLocaleString()})</div>
+          <input type="range" id="attackFood" min="0" max="${Math.min(pf.food, 20000)}" value="${Math.min(pf.food, 5000)}" oninput="document.getElementById('attackFoodVal').textContent=this.value">
+          <div style="text-align:right;color:var(--gold)"><span id="attackFoodVal">${Math.min(pf.food, 5000)}</span> 석</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray" onclick="closeModal()">취소</button>
+        <button class="btn btn-primary" onclick="executeAttack()">출전!</button>
+      </div>
+    </div>
+  `);
+}
+
+function executeAttack() {
+  const targetId = document.getElementById('attackTarget').value;
+  const tactic = document.getElementById('attackTactic').value;
+  const troops = parseInt(document.getElementById('attackTroops').value);
+  const food = parseInt(document.getElementById('attackFood').value);
+  
+  const selectedGens = Array.from(document.querySelectorAll('#activeModal input[type=checkbox]:checked')).map(cb => cb.value);
+  
+  const fromCity = G.cities[G.selectedCity];
+  if(fromCity.troops < troops) {
+    showNotification('병력이 부족합니다', 'danger');
+    return;
+  }
+  
+  fromCity.troops -= troops;
+  G.factions[G.playerId].food -= food;
+  
+  const dist = calcDistance(G.selectedCity, targetId);
+  
+  const army = {
+    id: 'army_' + Date.now(),
+    factionId: G.playerId,
+    from: G.selectedCity,
+    to: targetId,
+    troops: troops,
+    generals: selectedGens,
+    tactic: tactic,
+    progress: 0,
+    totalDays: Math.max(1, dist),
+    food: food,
+  };
+  
+  // Update general assignments
+  selectedGens.forEach(gid => {
+    if(G.generals[gid]) G.generals[gid].assignedCity = null;
+  });
+  
+  G.armies.push(army);
+  
+  const tacticNames = { normal:'정면공격', surprise:'기습', ambush:'매복', fire:'화공', feint:'유인', envelop:'포위', siege:'공성전' };
+  addLog(`⚔️ ${REGION_MAP[G.selectedCity].name} → ${REGION_MAP[targetId].name} 출전! 병력:${troops.toLocaleString()} 전술:${tacticNames[tactic]} (${dist}일 행군)`, 'combat');
+  
+  closeModal();
+  renderAll();
+}
+
+// RECRUIT MODAL
+function openRecruitModal() {
+  if(!G.selectedCity) { showNotification('지역을 선택하세요', 'danger'); return; }
+  const city = G.cities[G.selectedCity];
+  if(city.owner !== G.playerId) { showNotification('우리 영토에서만 가능합니다', 'danger'); return; }
+  
+  const pf = G.factions[G.playerId];
+  const maxRecruit = Math.min(10000, Math.floor(pf.gold / 10), city.maxTroops - city.troops);
+  
+  showModal(`
+    <div class="modal-box">
+      <div class="modal-header">⚔️ 병력 양성 - ${REGION_MAP[G.selectedCity].name}
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div class="info-row"><span class="lbl">보유 금</span><span class="val">${pf.gold.toLocaleString()}</span></div>
+        <div class="info-row"><span class="lbl">현재 주둔병</span><span class="val">${city.troops.toLocaleString()}</span></div>
+        <div class="info-row"><span class="lbl">최대 수용</span><span class="val">${city.maxTroops.toLocaleString()}</span></div>
+        <div style="margin-top:10px">
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">병종 선택</div>
+          <select id="troopType" style="width:100%">
+            <option value="infantry" data-cost="5" data-power="1.0">보병 (금 5/명)</option>
+            <option value="cavalry" data-cost="15" data-power="1.5">기병 (금 15/명, 군마 필요)</option>
+            <option value="archer" data-cost="8" data-power="1.2">궁병 (금 8/명)</option>
+            <option value="elite" data-cost="20" data-power="1.8">정예병 (금 20/명)</option>
+          </select>
+        </div>
+        <div style="margin-top:10px">
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">모집 병력 (최대: ${maxRecruit.toLocaleString()})</div>
+          <input type="range" id="recruitCount" min="100" max="${Math.max(100,maxRecruit)}" value="${Math.min(1000,maxRecruit)}" oninput="updateRecruitCost()">
+          <div style="display:flex;justify-content:space-between">
+            <span id="recruitCountVal" style="color:var(--gold)">${Math.min(1000,maxRecruit)}명</span>
+            <span style="color:var(--text-dim)">비용: <span id="recruitCostVal" style="color:var(--gold)">${Math.min(1000,maxRecruit)*5}</span>금</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray" onclick="closeModal()">취소</button>
+        <button class="btn btn-primary" onclick="executeRecruit()">모집</button>
+      </div>
+    </div>
+  `);
+}
+
+function updateRecruitCost() {
+  const count = parseInt(document.getElementById('recruitCount').value);
+  const type = document.getElementById('troopType');
+  const cost = parseInt(type.options[type.selectedIndex].getAttribute('data-cost'));
+  document.getElementById('recruitCountVal').textContent = count.toLocaleString() + '명';
+  document.getElementById('recruitCostVal').textContent = (count * cost).toLocaleString();
+}
+
+function executeRecruit() {
+  const count = parseInt(document.getElementById('recruitCount').value);
+  const typeEl = document.getElementById('troopType');
+  const cost = parseInt(typeEl.options[typeEl.selectedIndex].getAttribute('data-cost'));
+  const totalCost = count * cost;
+  const pf = G.factions[G.playerId];
+  
+  if(pf.gold < totalCost) { showNotification('금이 부족합니다', 'danger'); return; }
+  
+  const city = G.cities[G.selectedCity];
+  if(city.troops + count > city.maxTroops) { showNotification('수용 한계 초과', 'danger'); return; }
+  
+  if(typeEl.value === 'cavalry' && pf.horses < count) { showNotification('군마가 부족합니다', 'danger'); return; }
+  if(typeEl.value === 'cavalry') pf.horses -= count;
+  
+  pf.gold -= totalCost;
+  city.troops += count;
+  
+  addLog(`⚔️ ${REGION_MAP[G.selectedCity].name}에서 ${typeEl.options[typeEl.selectedIndex].text.split('(')[0].trim()} ${count.toLocaleString()}명 모집 (금 -${totalCost.toLocaleString()})`, 'success');
+  closeModal();
+  renderAll();
+}
+
+// ADD TROOPS TO GENERAL
+function openAddTroopsModal() {
+  const generals = getPlayerGenerals();
+  if(generals.length === 0) { showNotification('장수가 없습니다', 'danger'); return; }
+  
+  const genOptions = generals.map(g => `<option value="${g.id}">${g.emoji} ${g.name} (현재: ${g.troops.toLocaleString()}명)</option>`).join('');
+  const cityOptions = getPlayerCities().map(c => `<option value="${c.id}">${REGION_MAP[c.id].name} (주둔: ${c.troops.toLocaleString()}명)</option>`).join('');
+  
+  showModal(`
+    <div class="modal-box">
+      <div class="modal-header">➕ 부대 증원
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:10px">
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">장수 선택</div>
+          <select id="addTroopGen" style="width:100%">${genOptions}</select>
+        </div>
+        <div style="margin-bottom:10px">
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">병력 출처 도시</div>
+          <select id="addTroopCity" style="width:100%">${cityOptions}</select>
+        </div>
+        <div>
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">이동 병력</div>
+          <input type="number" id="addTroopCount" value="500" min="100" style="width:100%">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray" onclick="closeModal()">취소</button>
+        <button class="btn btn-primary" onclick="executeAddTroops()">증원</button>
+      </div>
+    </div>
+  `);
+}
+
+function executeAddTroops() {
+  const genId = document.getElementById('addTroopGen').value;
+  const cityId = document.getElementById('addTroopCity').value;
+  const count = parseInt(document.getElementById('addTroopCount').value);
+  
+  const city = G.cities[cityId];
+  const gen = G.generals[genId];
+  
+  if(city.troops < count) { showNotification('병력이 부족합니다', 'danger'); return; }
+  
+  city.troops -= count;
+  gen.troops += count;
+  
+  addLog(`➕ ${gen.name}에게 ${count.toLocaleString()}명 증원`, 'success');
+  closeModal();
+  renderAll();
+}
+
+// RETREAT MODAL
+function openRetreatModal() {
+  const myArmies = G.armies.filter(a => a.factionId === G.playerId);
+  if(myArmies.length === 0) { showNotification('후퇴할 군대가 없습니다', 'danger'); return; }
+  
+  const armyOptions = myArmies.map(a => {
+    const fr = REGION_MAP[a.from];
+    const tr = REGION_MAP[a.to];
+    return `<option value="${a.id}">${fr?.name} → ${tr?.name} (${a.troops.toLocaleString()}명)</option>`;
+  }).join('');
+  
+  showModal(`
+    <div class="modal-box">
+      <div class="modal-header">🏃 후퇴 명령
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="color:var(--gold);font-size:11px;margin-bottom:5px">후퇴할 부대</div>
+        <select id="retreatArmy" style="width:100%">${armyOptions}</select>
+        <div style="margin-top:10px;color:var(--text-dim);font-size:11px">⚠️ 후퇴 시 병력의 20%를 잃습니다</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray" onclick="closeModal()">취소</button>
+        <button class="btn btn-primary" onclick="executeRetreat()">후퇴</button>
+      </div>
+    </div>
+  `);
+}
+
+function executeRetreat() {
+  const armyId = document.getElementById('retreatArmy').value;
+  cancelArmy(armyId);
+  closeModal();
+}
+
+function cancelArmy(armyId) {
+  const army = G.armies.find(a => a.id === armyId);
+  if(!army) return;
+  
+  const loss = Math.floor(army.troops * 0.2);
+  const returnTroops = army.troops - loss;
+  
+  // Return troops to origin city
+  if(G.cities[army.from] && G.cities[army.from].owner === G.playerId) {
+    G.cities[army.from].troops += returnTroops;
+  }
+  
+  // Return generals
+  army.generals.forEach(gid => {
+    const gen = G.generals[gid];
+    if(gen) { gen.assignedCity = army.from; gen.troops = Math.floor(gen.troops * 0.8); }
+  });
+  
+  addLog(`🏃 후퇴! 손실 ${loss.toLocaleString()}명, 귀환 ${returnTroops.toLocaleString()}명`, 'warning');
+  G.armies = G.armies.filter(a => a.id !== armyId);
+  renderAll();
+}
+
+// RECRUIT GENERAL MODAL
+function openRecruitGeneralModal() {
+  const availableGens = Object.values(G.generals).filter(g => !g.isRecruited || g.rebels);
+  const pf = G.factions[G.playerId];
+  
+  let html = `
+    <div class="modal-box" style="max-width:600px">
+      <div class="modal-header">👤 인재 모집
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="color:var(--text-dim);font-size:11px;margin-bottom:10px">인재를 모집하려면 금과 명성이 필요합니다. 명성이 높을수록 높은 인재가 응합니다.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:400px;overflow-y:auto">
+  `;
+  
+  availableGens.slice(0, 20).forEach(gen => {
+    const cost = (gen.wu + gen.zhi + gen.tong) * 20;
+    const fameReq = Math.floor((gen.wu + gen.zhi + gen.tong) / 4);
+    const canAfford = pf.gold >= cost;
+    const hasFame = pf.fame >= fameReq;
+    
+    html += `
+      <div style="background:var(--bg-card);border:1px solid ${canAfford && hasFame ? 'var(--border)' : '#333'};padding:8px;opacity:${canAfford && hasFame ? '1' : '0.5'}">
+        <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">
+          <span style="font-size:18px">${gen.emoji}</span>
+          <span style="color:var(--gold);font-size:12px">${gen.name}</span>
+          <span style="font-size:10px;color:var(--text-dim)">${getRoleName(gen.role)}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:2px;font-size:10px;margin-bottom:4px">
+          <div style="text-align:center"><div style="color:var(--text-dim)">무</div><div style="color:var(--gold)">${gen.wu}</div></div>
+          <div style="text-align:center"><div style="color:var(--text-dim)">지</div><div style="color:var(--gold)">${gen.zhi}</div></div>
+          <div style="text-align:center"><div style="color:var(--text-dim)">통</div><div style="color:var(--gold)">${gen.tong}</div></div>
+          <div style="text-align:center"><div style="color:var(--text-dim)">정</div><div style="color:var(--gold)">${gen.pol}</div></div>
+        </div>
+        <div style="font-size:10px;color:var(--text-dim)">비용: ${cost.toLocaleString()}금 · 명성 ${fameReq} 필요</div>
+        <button onclick="recruitGeneral('${gen.id}', ${cost})" 
+          ${!canAfford || !hasFame ? 'disabled' : ''}
+          style="margin-top:4px;width:100%;padding:3px;font-size:10px;background:${canAfford && hasFame ? 'rgba(201,168,76,0.2)' : 'rgba(0,0,0,0.3)'};border:1px solid ${canAfford && hasFame ? 'var(--gold)' : '#333'};color:${canAfford && hasFame ? 'var(--gold)' : 'var(--text-dim)'};cursor:${canAfford && hasFame ? 'pointer' : 'not-allowed'}">
+          ${canAfford && hasFame ? '모집' : (canAfford ? '명성 부족' : '금 부족')}
+        </button>
+      </div>
+    `;
+  });
+  
+  html += '</div></div><div class="modal-footer"><button class="btn btn-gray" onclick="closeModal()">닫기</button></div></div>';
+  showModal(html);
+}
+
+function recruitGeneral(genId, cost) {
+  const gen = G.generals[genId];
+  const pf = G.factions[G.playerId];
+  
+  if(pf.gold < cost) { showNotification('금이 부족합니다', 'danger'); return; }
+  
+  pf.gold -= cost;
+  gen.isRecruited = true;
+  gen.rebels = false;
+  gen.factionId = G.playerId;
+  gen.loyalty = 60 + Math.floor(Math.random()*20);
+  gen.troops = 500 + Math.floor(Math.random()*1000);
+  
+  if(!pf.generals.includes(genId)) pf.generals.push(genId);
+  
+  addLog(`🎉 ${gen.name}이(가) 합류! (금 -${cost.toLocaleString()})`, 'success');
+  showNotification(`🎉 ${gen.name} 영입!`, '');
+  closeModal();
+  renderAll();
+}
+
+// ASSIGN CITY MODAL
+function openAssignCityModal() {
+  if(!G.selectedCity) { showNotification('지역을 선택하세요', 'danger'); return; }
+  const city = G.cities[G.selectedCity];
+  if(city.owner !== G.playerId) { showNotification('우리 영토에서만 가능합니다', 'danger'); return; }
+  
+  const genOptions = getPlayerGenerals().map(g => `<option value="${g.id}">${g.emoji} ${g.name} (정치:${g.pol})</option>`).join('');
+  
+  showModal(`
+    <div class="modal-box">
+      <div class="modal-header">🏯 지역 관리 임명 - ${REGION_MAP[G.selectedCity].name}
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="color:var(--text-dim);font-size:11px;margin-bottom:10px">현재 관리자: ${city.governor ? G.generals[city.governor]?.name : '없음'}</div>
+        <div style="color:var(--gold);font-size:11px;margin-bottom:5px">임명할 장수</div>
+        <select id="govSelect" style="width:100%">
+          <option value="">없음</option>
+          ${genOptions}
+        </select>
+        <div style="margin-top:10px;font-size:11px;color:var(--text-dim)">정치력이 높은 장수를 임명하면 개발도와 안정도가 향상됩니다</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray" onclick="closeModal()">취소</button>
+        <button class="btn btn-primary" onclick="executeAssignCity()">임명</button>
+      </div>
+    </div>
+  `);
+}
+
+function executeAssignCity() {
+  const govId = document.getElementById('govSelect').value;
+  const city = G.cities[G.selectedCity];
+  city.governor = govId || null;
+  if(govId) {
+    G.generals[govId].assignedCity = G.selectedCity;
+    addLog(`👑 ${G.generals[govId].name}을(를) ${REGION_MAP[G.selectedCity].name} 관리자로 임명`, 'success');
+  } else {
+    addLog(`👑 ${REGION_MAP[G.selectedCity].name} 관리자 해임`, 'default');
+  }
+  closeModal();
+  renderAll();
+}
+
+// DIPLOMACY MODAL
+function showDiplomacy() {
+  const otherFactions = Object.values(G.factions).filter(f => f.id !== G.playerId && Object.values(G.cities).some(c => c.owner === f.id));
+  
+  let html = `
+    <div class="modal-box" style="max-width:600px">
+      <div class="modal-header">🤝 외교
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <table class="diplo-table">
+          <thead><tr><th>세력</th><th>관계</th><th>관계값</th><th>행동</th></tr></thead>
+          <tbody>
+  `;
+  
+  otherFactions.forEach(f => {
+    const rel = G.factions[G.playerId].relations[f.id] || {type:'neutral',value:50};
+    const cities = Object.values(G.cities).filter(c => c.owner === f.id).length;
+    html += `
+      <tr>
+        <td style="color:${getFactionColor(f.id)}">${f.name} (${cities})</td>
+        <td class="rel-${rel.type}">${getRelationName(G.playerId, f.id)}</td>
+        <td>${rel.value}</td>
+        <td>
+          <button onclick="diploAction('${f.id}','ally')" style="font-size:10px;padding:2px 5px;background:rgba(45,110,45,0.3);border:1px solid #2d6e2d;color:#6bff6b;cursor:pointer;margin:1px">동맹</button>
+          <button onclick="diploAction('${f.id}','gift')" style="font-size:10px;padding:2px 5px;background:rgba(201,168,76,0.2);border:1px solid var(--gold);color:var(--gold);cursor:pointer;margin:1px">선물</button>
+          <button onclick="diploAction('${f.id}','peace')" style="font-size:10px;padding:2px 5px;background:rgba(70,130,180,0.3);border:1px solid steelblue;color:lightblue;cursor:pointer;margin:1px">강화</button>
+          <button onclick="diploAction('${f.id}','war')" style="font-size:10px;padding:2px 5px;background:rgba(139,26,26,0.3);border:1px solid var(--red);color:#ff6b6b;cursor:pointer;margin:1px">선전포고</button>
+        </td>
+      </tr>
+    `;
+  });
+  
+  html += '</tbody></table></div><div class="modal-footer"><button class="btn btn-gray" onclick="closeModal()">닫기</button></div></div>';
+  showModal(html);
+}
+
+function diploAction(factionId, action) {
+  const pf = G.factions[G.playerId];
+  const tf = G.factions[factionId];
+  if(!pf.relations[factionId]) pf.relations[factionId] = {type:'neutral',value:50};
+  if(!tf.relations[G.playerId]) tf.relations[G.playerId] = {type:'neutral',value:50};
+  
+  if(action === 'ally') {
+    if(pf.relations[factionId].value >= 60) {
+      pf.relations[factionId].type = 'allied';
+      tf.relations[G.playerId].type = 'allied';
+      addLog(`🤝 ${tf.name}과(와) 동맹 체결!`, 'diplo');
+    } else {
+      addLog(`❌ 관계가 좋지 않아 동맹이 거절되었습니다`, 'warning');
+    }
+  } else if(action === 'gift') {
+    const cost = 2000;
+    if(pf.gold < cost) { showNotification('금이 부족합니다', 'danger'); return; }
+    pf.gold -= cost;
+    pf.relations[factionId].value = Math.min(100, pf.relations[factionId].value + 10);
+    tf.relations[G.playerId].value = Math.min(100, tf.relations[G.playerId].value + 10);
+    addLog(`🎁 ${tf.name}에게 선물 (금 -${cost})! 관계 +10`, 'diplo');
+  } else if(action === 'peace') {
+    pf.relations[factionId].type = 'neutral';
+    tf.relations[G.playerId].type = 'neutral';
+    pf.relations[factionId].value = 50;
+    tf.relations[G.playerId].value = 50;
+    addLog(`☮️ ${tf.name}과(와) 강화 조약`, 'diplo');
+  } else if(action === 'war') {
+    pf.relations[factionId].type = 'hostile';
+    tf.relations[G.playerId].type = 'hostile';
+    pf.relations[factionId].value = 0;
+    tf.relations[G.playerId].value = 0;
+    addLog(`⚔️ ${tf.name}에게 선전포고!`, 'combat');
+  }
+  closeModal();
+  showDiplomacy();
+}
+
+// SEND AMBASSADOR
+function openSendAmbassadorModal() {
+  const otherFactions = Object.values(G.factions).filter(f => f.id !== G.playerId);
+  const factionOptions = otherFactions.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+  
+  showModal(`
+    <div class="modal-box">
+      <div class="modal-header">📜 사신 파견
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:10px">
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">파견 대상</div>
+          <select id="ambassadorTarget" style="width:100%">${factionOptions}</select>
+        </div>
+        <div style="margin-bottom:10px">
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">사신 목적</div>
+          <select id="ambassadorPurpose" style="width:100%">
+            <option value="greet">친선 방문 (관계 +5)</option>
+            <option value="ally">동맹 제안 (관계 +10, 금 -1000)</option>
+            <option value="trade">통상 조약 (관계 +8, 매달 교역)</option>
+            <option value="info">정보 수집 (첩보 획득)</option>
+            <option value="tribute">조공 (관계 +20, 금 -3000)</option>
+            <option value="threaten">위협 (관계 -20, 명성 +5)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray" onclick="closeModal()">취소</button>
+        <button class="btn btn-primary" onclick="executeSendAmbassador()">파견</button>
+      </div>
+    </div>
+  `);
+}
+
+function executeSendAmbassador() {
+  const targetId = document.getElementById('ambassadorTarget').value;
+  const purpose = document.getElementById('ambassadorPurpose').value;
+  const tf = G.factions[targetId];
+  const pf = G.factions[G.playerId];
+  
+  if(!pf.relations[targetId]) pf.relations[targetId] = {type:'neutral',value:50};
+  if(!tf) { closeModal(); return; }
+  if(!tf.relations) tf.relations = {};
+  if(!tf.relations[G.playerId]) tf.relations[G.playerId] = {type:'neutral',value:50};
+  
+  const effects = {
+    greet: () => { pf.relations[targetId].value = Math.min(100, pf.relations[targetId].value + 5); addLog(`📜 ${tf.name}에 사신 파견 - 친선 방문`, 'diplo'); },
+    ally: () => {
+      if(pf.gold < 1000) { showNotification('금이 부족합니다', 'danger'); return; }
+      pf.gold -= 1000;
+      pf.relations[targetId].value = Math.min(100, pf.relations[targetId].value + 10);
+      tf.relations[G.playerId].value = Math.min(100, tf.relations[G.playerId].value + 10);
+      addLog(`🤝 ${tf.name}에 동맹 제안 (금 -1000)`, 'diplo');
+    },
+    trade: () => { pf.relations[targetId].value = Math.min(100, pf.relations[targetId].value + 8); addLog(`💹 ${tf.name}과 통상 조약 체결`, 'diplo'); },
+    info: () => { addLog(`🕵️ ${tf.name}에 대한 첩보 수집: 금 ${tf.gold.toLocaleString()}, 병력 약 ${Object.values(G.cities).filter(c=>c.owner===targetId).reduce((s,c)=>s+c.troops,0).toLocaleString()}명`, 'diplo'); },
+    tribute: () => {
+      if(pf.gold < 3000) { showNotification('금이 부족합니다', 'danger'); return; }
+      pf.gold -= 3000;
+      pf.relations[targetId].value = Math.min(100, pf.relations[targetId].value + 20);
+      tf.relations[G.playerId].value = Math.min(100, tf.relations[G.playerId].value + 20);
+      addLog(`💰 ${tf.name}에 조공 (금 -3000), 관계 +20`, 'diplo');
+    },
+    threaten: () => {
+      pf.relations[targetId].value = Math.max(0, pf.relations[targetId].value - 20);
+      tf.relations[G.playerId].value = Math.max(0, tf.relations[G.playerId].value - 20);
+      pf.fame += 5;
+      addLog(`⚠️ ${tf.name}에 위협 메시지 전달, 명성 +5`, 'warning');
+    },
+  };
+  
+  if(effects[purpose]) effects[purpose]();
+  closeModal();
+}
+
+// GIFT MODAL
+function openGiftModal() {
+  const otherFactions = Object.values(G.factions).filter(f => f.id !== G.playerId && Object.values(G.cities).some(c => c.owner === f.id));
+  if(otherFactions.length === 0) { showNotification('선물할 세력이 없습니다', 'danger'); return; }
+  
+  const factionOptions = otherFactions.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+  const pf = G.factions[G.playerId];
+  
+  showModal(`
+    <div class="modal-box">
+      <div class="modal-header">🎁 선물 보내기
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:10px">
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">대상</div>
+          <select id="giftTarget" style="width:100%">${factionOptions}</select>
+        </div>
+        <div>
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">금액 (보유: ${pf.gold.toLocaleString()})</div>
+          <input type="range" id="giftAmount" min="500" max="${Math.min(pf.gold,10000)}" value="1000" oninput="document.getElementById('giftAmountVal').textContent=this.value">
+          <div style="text-align:right;color:var(--gold)"><span id="giftAmountVal">1000</span>금</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray" onclick="closeModal()">취소</button>
+        <button class="btn btn-gold" onclick="executeGift()">선물</button>
+      </div>
+    </div>
+  `);
+}
+
+function executeGift() {
+  const targetId = document.getElementById('giftTarget').value;
+  const amount = parseInt(document.getElementById('giftAmount').value);
+  const pf = G.factions[G.playerId];
+  
+  if(pf.gold < amount) { showNotification('금이 부족합니다', 'danger'); return; }
+  
+  pf.gold -= amount;
+  if(!pf.relations[targetId]) pf.relations[targetId] = {type:'neutral',value:50};
+  const bonus = Math.floor(amount / 500);
+  pf.relations[targetId].value = Math.min(100, pf.relations[targetId].value + bonus);
+  
+  addLog(`🎁 ${G.factions[targetId].name}에게 ${amount.toLocaleString()}금 선물! 관계 +${bonus}`, 'diplo');
+  closeModal();
+}
+
+// TRAIN MODAL
+function openTrainModal() {
+  if(!G.selectedCity) { showNotification('지역을 선택하세요', 'danger'); return; }
+  const city = G.cities[G.selectedCity];
+  if(city.owner !== G.playerId) { showNotification('우리 영토에서만 가능합니다', 'danger'); return; }
+  const pf = G.factions[G.playerId];
+  
+  showModal(`
+    <div class="modal-box">
+      <div class="modal-header">🏋️ 내정 강화 - ${REGION_MAP[G.selectedCity].name}
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div class="info-row"><span class="lbl">현재 개발도</span><span class="val">${city.development}%</span></div>
+        <div class="info-row"><span class="lbl">현재 안정도</span><span class="val">${city.stability}%</span></div>
+        <div style="margin-top:10px">
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">투자 종류</div>
+          <select id="trainType" style="width:100%">
+            <option value="develop">농업 개발 (금 2000, 개발도 +10)</option>
+            <option value="stability">민심 안정 (금 1500, 안정도 +15)</option>
+            <option value="defense">성벽 강화 (금 3000, 방어력 +10)</option>
+            <option value="commerce">상업 발전 (금 2500, 매달 금 +500)</option>
+            <option value="training">병사 훈련 (금 1000, 기존 병력 전투력 +5%)</option>
+          </select>
+        </div>
+        <div style="margin-top:5px;color:var(--text-dim);font-size:11px">보유 금: ${pf.gold.toLocaleString()}</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray" onclick="closeModal()">취소</button>
+        <button class="btn btn-primary" onclick="executeTrain()">투자</button>
+      </div>
+    </div>
+  `);
+}
+
+function executeTrain() {
+  const type = document.getElementById('trainType').value;
+  const pf = G.factions[G.playerId];
+  const city = G.cities[G.selectedCity];
+  
+  const costs = { develop:2000, stability:1500, defense:3000, commerce:2500, training:1000 };
+  const cost = costs[type];
+  
+  if(pf.gold < cost) { showNotification('금이 부족합니다', 'danger'); return; }
+  pf.gold -= cost;
+  
+  const effects = {
+    develop: () => { city.development = Math.min(100, city.development + 10); addLog(`🌾 ${REGION_MAP[G.selectedCity].name} 농업 개발! 개발도 +10`, 'success'); },
+    stability: () => { city.stability = Math.min(100, city.stability + 15); addLog(`☮️ ${REGION_MAP[G.selectedCity].name} 민심 안정! 안정도 +15`, 'success'); },
+    defense: () => { city.defense += 10; addLog(`🏯 ${REGION_MAP[G.selectedCity].name} 성벽 강화! 방어력 +10`, 'success'); },
+    commerce: () => { city.goldIncome = (city.goldIncome || 0) + 500; addLog(`💹 ${REGION_MAP[G.selectedCity].name} 상업 발전!`, 'success'); },
+    training: () => { city.troopQuality = Math.min(2.0, (city.troopQuality || 1.0) + 0.05); addLog(`⚔️ ${REGION_MAP[G.selectedCity].name} 병사 훈련!`, 'success'); },
+  };
+  
+  effects[type]();
+  closeModal();
+  renderAll();
+}
+
+// LEND TROOPS MODAL
+function openLendTroopsModal() {
+  const generals = getPlayerGenerals();
+  if(generals.length < 2) { showNotification('장수가 2명 이상 필요합니다', 'danger'); return; }
+  
+  const genOptions = generals.map(g => `<option value="${g.id}">${g.emoji} ${g.name} (${g.troops.toLocaleString()}명)</option>`).join('');
+  
+  showModal(`
+    <div class="modal-box">
+      <div class="modal-header">🤝 병력 대여
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:10px">
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">병력 제공 장수</div>
+          <select id="lendFrom" style="width:100%">${genOptions}</select>
+        </div>
+        <div style="margin-bottom:10px">
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">병력 수령 장수</div>
+          <select id="lendTo" style="width:100%">${genOptions}</select>
+        </div>
+        <div>
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">이동 병력</div>
+          <input type="number" id="lendCount" value="500" min="100" style="width:100%">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray" onclick="closeModal()">취소</button>
+        <button class="btn btn-primary" onclick="executeLendTroops()">이동</button>
+      </div>
+    </div>
+  `);
+}
+
+function executeLendTroops() {
+  const fromId = document.getElementById('lendFrom').value;
+  const toId = document.getElementById('lendTo').value;
+  const count = parseInt(document.getElementById('lendCount').value);
+  
+  if(fromId === toId) { showNotification('같은 장수입니다', 'danger'); return; }
+  const fromGen = G.generals[fromId];
+  const toGen = G.generals[toId];
+  if(fromGen.troops < count) { showNotification('병력이 부족합니다', 'danger'); return; }
+  
+  fromGen.troops -= count;
+  toGen.troops += count;
+  addLog(`🤝 ${fromGen.name} → ${toGen.name} 병력 ${count.toLocaleString()}명 이동`, 'success');
+  closeModal();
+  renderAll();
+}
+
+// REMOVE GENERAL MODAL
+function openRemoveGeneralModal() {
+  const generals = getPlayerGenerals().filter(g => g.id !== G.playerLeaderId && !g.rebels && !g.inBattle);
+  if(generals.length === 0) { showNotification('파면할 장수가 없습니다', 'danger'); return; }
+  
+  const genOptions = generals.map(g => `<option value="${g.id}">${g.emoji} ${g.name} (충성:${g.loyalty})</option>`).join('');
+  
+  showModal(`
+    <div class="modal-box">
+      <div class="modal-header">❌ 장수 파면
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="color:var(--text-dim);font-size:11px;margin-bottom:10px">⚠️ 반란 중인 장수는 파면할 수 없습니다</div>
+        <select id="removeGenSelect" style="width:100%">${genOptions}</select>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray" onclick="closeModal()">취소</button>
+        <button class="btn btn-primary" onclick="executeRemoveGeneral()">파면</button>
+      </div>
+    </div>
+  `);
+}
+
+function executeRemoveGeneral() {
+  const genId = document.getElementById('removeGenSelect').value;
+  const gen = G.generals[genId];
+  gen.isRecruited = false;
+  gen.factionId = null;
+  gen.assignedCity = null;
+  gen.troops = 0;
+  
+  const pf = G.factions[G.playerId];
+  pf.generals = pf.generals.filter(g => g !== genId);
+  
+  addLog(`❌ ${gen.name} 파면`, 'warning');
+  closeModal();
+  renderAll();
+}
+
+// CHAR INFO MODAL
+function showCharInfo() {
+  const leader = G.generals[G.playerLeaderId];
+  const pf = G.factions[G.playerId];
+  
+  showModal(`
+    <div class="modal-box">
+      <div class="modal-header">👤 나의 정보
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex;align-items:center;gap:15px;margin-bottom:15px">
+          <div style="font-size:48px">${leader.emoji}</div>
+          <div>
+            <div style="font-family:'Noto Serif KR';font-size:20px;color:var(--gold)">${leader.name}</div>
+            <div style="color:var(--text-dim);font-size:12px">${leader.bio}</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px">
+          <div class="info-row"><span class="lbl">무력</span><span class="val">${leader.wu}</span></div>
+          <div class="info-row"><span class="lbl">지력</span><span class="val">${leader.zhi}</span></div>
+          <div class="info-row"><span class="lbl">통솔</span><span class="val">${leader.tong}</span></div>
+          <div class="info-row"><span class="lbl">정치</span><span class="val">${leader.pol}</span></div>
+          <div class="info-row"><span class="lbl">레벨</span><span class="val">${leader.level}</span></div>
+          <div class="info-row"><span class="lbl">경험치</span><span class="val">${leader.exp}/${leader.level * 100}</span></div>
+        </div>
+        <div style="color:var(--gold);font-size:11px;margin-bottom:5px">특기</div>
+        <div>${leader.skills.map(s => `<span style="background:rgba(201,168,76,0.1);border:1px solid var(--border);padding:3px 8px;font-size:11px;display:inline-block;margin:2px">${s}</span>`).join('')}</div>
+        <div style="margin-top:10px">
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">세력 현황</div>
+          <div class="info-row"><span class="lbl">영지</span><span class="val">${getPlayerCities().length}개</span></div>
+          <div class="info-row"><span class="lbl">장수</span><span class="val">${getPlayerGenerals().length}명</span></div>
+          <div class="info-row"><span class="lbl">명성</span><span class="val">${pf.fame}</span></div>
+          <div class="info-row"><span class="lbl">금</span><span class="val">${pf.gold.toLocaleString()}</span></div>
+          <div class="info-row"><span class="lbl">군량</span><span class="val">${pf.food.toLocaleString()}</span></div>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-gray" onclick="closeModal()">닫기</button></div>
+    </div>
+  `);
+}
+
+// RUMORS MODAL
+function showRumors() {
+  const rumors = generateRumors();
+  showModal(`
+    <div class="modal-box">
+      <div class="modal-header">📜 소문
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        ${rumors.map(r => `
+          <div style="padding:8px;border-bottom:1px solid var(--border);font-size:12px">
+            <span style="color:var(--gold)">◆</span> ${r}
+          </div>
+        `).join('')}
+      </div>
+      <div class="modal-footer"><button class="btn btn-gray" onclick="closeModal()">닫기</button></div>
+    </div>
+  `);
+}
+
+function generateRumors() {
+  const rumors = [];
+  const d = G.date;
+  const factions = Object.values(G.factions).filter(f => Object.values(G.cities).some(c => c.owner === f.id));
+  
+  if(factions.length > 0) {
+    const f = factions[Math.floor(Math.random()*factions.length)];
+    const cities = Object.values(G.cities).filter(c => c.owner === f.id);
+    rumors.push(`${f.name}이(가) 군비를 증강하고 있다는 소문이 들린다.`);
+    if(cities.length > 0) {
+      const c = cities[Math.floor(Math.random()*cities.length)];
+      rumors.push(`${REGION_MAP[c.id]?.name}에서 반란의 기운이 감돌고 있다고 한다.`);
+    }
+  }
+  
+  rumors.push(`${d.year}년 ${d.month}월, 각지에서 군웅이 할거하고 있다.`);
+  
+  const factionPairs = [];
+  for(let i = 0; i < factions.length - 1; i++) {
+    for(let j = i+1; j < factions.length; j++) {
+      factionPairs.push([factions[i], factions[j]]);
+    }
+  }
+  if(factionPairs.length > 0) {
+    const [f1, f2] = factionPairs[Math.floor(Math.random()*factionPairs.length)];
+    rumors.push(`${f1.name}과(와) ${f2.name}의 관계가 심상치 않다는 소문이 있다.`);
+  }
+  
+  const weather = { spring:'봄바람이 불어 전쟁의 기운이 가득하다', summer:'무더운 여름, 병사들의 사기가 떨어지고 있다', fall:'수확의 계절, 군량 확보가 급해진다', winter:'혹독한 겨울, 행군이 매우 어렵다고 한다' };
+  rumors.push(weather[G.season]);
+  
+  return rumors;
+}
+
+// ADVISOR ADVICE
+function getAdvisorAdvice(advisorId) {
+  const adv = G.generals[advisorId];
+  const advice = generateAdvice(adv);
+  
+  showModal(`
+    <div class="modal-box">
+      <div class="modal-header">💬 ${adv.name}의 조언
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex;align-items:start;gap:10px">
+          <div style="font-size:32px">${adv.emoji}</div>
+          <div>
+            <div style="color:var(--gold);font-size:13px;margin-bottom:5px">${adv.name} (지력 ${adv.zhi})</div>
+            <div style="font-size:12px;line-height:1.7;color:var(--text)">${advice}</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-gray" onclick="closeModal()">닫기</button></div>
+    </div>
+  `);
+}
+
+function generateAdvice(adv) {
+  const zhi = adv.zhi;
+  const pf = G.factions[G.playerId];
+  const playerCities = getPlayerCities();
+  const playerGens = getPlayerGenerals();
+  
+  const advices = [];
+  
+  // Military advice
+  if(zhi >= 80) {
+    const weakEnemies = Object.values(G.cities).filter(c => c.owner !== G.playerId && c.troops < 2000);
+    if(weakEnemies.length > 0) {
+      const target = weakEnemies.sort((a,b) => a.troops - b.troops)[0];
+      advices.push(`지금 ${REGION_MAP[target.id]?.name}이(가) 취약합니다 (병력 ${target.troops.toLocaleString()}). 즉시 공략을 권합니다.`);
+    }
+    
+    if(pf.food < 5000) {
+      advices.push(`군량이 부족합니다. 영지 개발이나 수확을 기다리는 것이 현명합니다.`);
+    }
+    
+    if(playerCities.some(c => c.troops < 1000)) {
+      advices.push(`일부 영지의 방어력이 취약합니다. 병력을 보강하십시오.`);
+    }
+  } else if(zhi >= 60) {
+    advices.push(`내정을 강화하여 기반을 다지시오.`);
+    advices.push(`동맹을 통해 세력을 확대하십시오.`);
+  } else {
+    advices.push(`...특별한 의견이 없습니다.`);
+  }
+  
+  if(playerGens.length < 3) advices.push(`인재 모집이 시급합니다. 훌륭한 장수들이 아직 재야에 있습니다.`);
+  
+  const armies = G.armies.filter(a => a.factionId !== G.playerId);
+  if(armies.length > 0) {
+    const playerTargets = armies.filter(a => G.cities[a.to]?.owner === G.playerId);
+    if(playerTargets.length > 0) {
+      advices.push(`⚠️ 적군이 우리 영토를 향해 진군 중입니다! 방어를 준비하십시오.`);
+    }
+  }
+  
+  return advices.join(' ') || '현재 상황은 안정적입니다. 꾸준한 내정 발전을 권합니다.';
+}
+
+function giveAdvisorAdvice() {
+  const advisors = getPlayerGenerals().filter(g => g.role === 'advisor');
+  if(advisors.length === 0) return;
+  const adv = advisors.sort((a,b) => b.zhi - a.zhi)[0];
+  const advice = generateAdvice(adv);
+  addLog(`💬 ${adv.name}: ${advice.substring(0, 60)}...`, 'diplo');
+}
+
+// FOOD CONSUMPTION
+function processFoodConsumption() {
+  const gens = getPlayerGenerals();
+  const armyFood = G.armies.filter(a => a.factionId === G.playerId).reduce((s,a) => s + Math.floor(a.troops * 0.005), 0);
+  G.factions[G.playerId].food = Math.max(0, G.factions[G.playerId].food - armyFood);
+}
+
+// NOTIFICATIONS
+function showNotification(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = `notification ${type}`;
+  el.textContent = msg;
+  document.getElementById('notificationsContainer').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// SCENARIO/CHARACTER SELECTION
+let selectedScenario = 0;
+let selectedChar = null;
+
+function startGame(scenarioIdx) {
+  selectedScenario = scenarioIdx;
+  const sc = SCENARIOS[scenarioIdx];
+  
+  // Show character selection
+  document.getElementById('titleScreen').innerHTML = `
+    <div style="text-align:center">
+      <div class="title-main" style="font-size:48px">주인공 선택</div>
+      <div class="title-sub" style="font-size:16px">${sc.name} (${sc.year}년)</div>
+      <div class="title-divider" style="margin:20px auto"></div>
+      <div class="char-select-grid" style="max-width:500px">
+        ${sc.playerChoices.map(p => `
+          <div class="char-select-card ${selectedChar === p.id ? 'selected' : ''}" onclick="selectChar('${p.id}')" id="charCard_${p.id}">
+            <div class="avatar">${p.emoji}</div>
+            <div class="cname">${p.name}</div>
+            <div class="cfaction">${p.desc}</div>
+          </div>
+        `).join('')}
+      </div>
+      <button class="scenario-btn" style="margin-top:20px;justify-content:center;width:200px" onclick="confirmStartGame()">게임 시작</button>
+      <button class="scenario-btn" style="margin-top:10px;justify-content:center;width:200px" onclick="location.reload()">뒤로</button>
+    </div>
+  `;
+}
+
+function selectChar(charId) {
+  selectedChar = charId;
+  document.querySelectorAll('.char-select-card').forEach(el => el.classList.remove('selected'));
+  const el = document.getElementById('charCard_' + charId);
+  if(el) el.classList.add('selected');
+}
+
+function confirmStartGame() {
+  if(!selectedChar) { 
+    const sc = SCENARIOS[selectedScenario];
+    selectedChar = sc.playerChoices[0].id; 
+  }
+  
+  document.getElementById('titleScreen').style.display = 'none';
+  document.getElementById('gameScreen').classList.add('active');
+  
+  initGameState(selectedScenario, selectedChar);
+  renderAll();
+}
+
+// HISTORICAL EVENTS for scenarios
+function checkHistoricalEvents() {
+  const d = G.date;
+  const sc = G.scenario;
+  
+  if(sc.name === '황건적의 난' && d.year === 184 && d.month === 4 && d.day === 1) {
+    showEventBanner({ id:'historical_1', title:'반동탁 연합 결성!', icon:'⚔️', desc:'각지의 군웅들이 동탁 타도를 외치며 연합하고 있습니다!', effect: () => {} });
+  }
+}
+
+// INITIALIZE MAP
+document.getElementById('mapSvg').addEventListener('click', function(e) {
+  if(!e.target.closest('.city-node')) {
+    // Click on empty space - deselect
+    // G.selectedCity = null;
+    // renderCityInfo();
+  }
+});
+
+// =============================================
+// DEPLOY GENERAL TO CITY
+// =============================================
+function openDeployGeneralModal(genId) {
+  const gen = G.generals[genId];
+  if(!gen) return;
+  const playerCities = getPlayerCities();
+  if(playerCities.length === 0) { showNotification('배치할 영지가 없습니다', 'danger'); return; }
+
+  const cityOptions = playerCities.map(c => {
+    const r = REGION_MAP[c.id];
+    const dist = gen.assignedCity ? calcDistance(gen.assignedCity, c.id) : 0;
+    const already = gen.assignedCity === c.id ? ' ✓현재' : '';
+    return `<option value="${c.id}" ${gen.assignedCity === c.id ? 'selected' : ''}>${r.name}${already} (주둔병 ${c.troops.toLocaleString()}${dist > 0 ? ', ' + dist + '일 거리' : ''})</option>`;
+  }).join('');
+
+  // Troops the general can leave behind or bring
+  const genTroops = gen.troops;
+  const currentCity = gen.assignedCity ? G.cities[gen.assignedCity] : null;
+  const cityTroopsAvail = currentCity ? currentCity.troops : 0;
+
+  showModal(`
+    <div class="modal-box">
+      <div class="modal-header">🏯 ${gen.emoji} ${gen.name} 배치
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:8px;font-size:11px;color:var(--text-dim)">
+          현재 위치: <span style="color:var(--gold)">${gen.assignedCity ? REGION_MAP[gen.assignedCity]?.name : '미배치'}</span>
+          · 지휘 병력: <span style="color:var(--gold)">${genTroops.toLocaleString()}</span>명
+        </div>
+        <div style="margin-bottom:10px">
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">배치할 성 선택</div>
+          <select id="deployCity" style="width:100%">${cityOptions}</select>
+        </div>
+        <div style="margin-bottom:10px">
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">
+            데려갈 병력 <span style="color:var(--text-dim)">(장수 직속: ${genTroops.toLocaleString()} + 현 주둔 도시: ${cityTroopsAvail.toLocaleString()})</span>
+          </div>
+          <input type="range" id="deployTroops" min="0" max="${genTroops + cityTroopsAvail}"
+            value="${genTroops}"
+            oninput="document.getElementById('deployTroopsVal').textContent=parseInt(this.value).toLocaleString()">
+          <div style="display:flex;justify-content:space-between;font-size:11px">
+            <span style="color:var(--text-dim)">데려갈 병력</span>
+            <span style="color:var(--gold)"><span id="deployTroopsVal">${genTroops.toLocaleString()}</span>명</span>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);background:rgba(0,0,0,0.3);padding:8px;border:1px solid var(--border)">
+          💡 남은 병력은 현재 주둔 성에 자동으로 배치됩니다.<br>
+          통솔력이 높을수록 더 많은 병력을 효율적으로 지휘할 수 있습니다.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray" onclick="closeModal()">취소</button>
+        <button class="btn btn-primary" onclick="executeDeployGeneral('${genId}')">배치</button>
+      </div>
+    </div>
+  `);
+}
+
+function executeDeployGeneral(genId) {
+  const gen = G.generals[genId];
+  const targetCityId = document.getElementById('deployCity').value;
+  const deployTroops = parseInt(document.getElementById('deployTroops').value);
+  const targetCity = G.cities[targetCityId];
+
+  // Check troops available (gen's own + current city garrison)
+  const prevCityId = gen.assignedCity;
+  const prevCity = prevCityId ? G.cities[prevCityId] : null;
+  const totalAvail = gen.troops + (prevCity ? prevCity.troops : 0);
+
+  if(deployTroops > totalAvail) { showNotification('병력이 부족합니다', 'danger'); return; }
+
+  // Deduct from current city if needed
+  const fromGenTroops = Math.min(deployTroops, gen.troops);
+  const fromCityTroops = deployTroops - fromGenTroops;
+
+  if(prevCity && fromCityTroops > 0) {
+    if(prevCity.troops < fromCityTroops) { showNotification('주둔 병력이 부족합니다', 'danger'); return; }
+    prevCity.troops -= fromCityTroops;
+  }
+
+  // Remaining gen troops stay at old city as garrison
+  const leftBehind = gen.troops - fromGenTroops;
+  if(prevCity && leftBehind > 0) prevCity.troops += leftBehind;
+
+  // Deploy
+  gen.troops = deployTroops;
+  gen.assignedCity = targetCityId;
+
+  const prevName = prevCityId ? REGION_MAP[prevCityId]?.name : '미배치';
+  const targetName = REGION_MAP[targetCityId]?.name;
+  addLog(`🏯 ${gen.name} → ${targetName} 배치 완료 (병력 ${deployTroops.toLocaleString()}명, 구 주둔지 잔류 ${leftBehind.toLocaleString()}명)`, 'success');
+  closeModal();
+  renderAll();
+}
+
+// =============================================
+// REWARD GENERAL (boost loyalty)
+// =============================================
+function openRewardGeneralModal(genId) {
+  const gen = G.generals[genId];
+  if(!gen) return;
+  const pf = G.factions[G.playerId];
+
+  showModal(`
+    <div class="modal-box">
+      <div class="modal-header">🎁 ${gen.emoji} ${gen.name} 포상
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div class="info-row"><span class="lbl">현재 충성도</span><span class="val" style="color:${gen.loyalty<25?'#ff6b6b':gen.loyalty<50?'#ffd700':'#6bff6b'}">${gen.loyalty}</span></div>
+        <div class="info-row"><span class="lbl">보유 금</span><span class="val">${pf.gold.toLocaleString()}</span></div>
+        <div style="margin-top:10px">
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">포상 금액</div>
+          <select id="rewardAmount" style="width:100%">
+            <option value="500">소량 (500금) → 충성 +5</option>
+            <option value="1500" selected>보통 (1500금) → 충성 +12</option>
+            <option value="3000">후한 (3000금) → 충성 +22</option>
+            <option value="6000">극진 (6000금) → 충성 +40</option>
+          </select>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--text-dim)">
+          ※ 충성도 25 미만이면 사직 위험, 10 미만이면 반란 위험이 있습니다.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray" onclick="closeModal()">취소</button>
+        <button class="btn btn-gold" onclick="executeReward('${genId}')">포상</button>
+      </div>
+    </div>
+  `);
+}
+
+function executeReward(genId) {
+  const gen = G.generals[genId];
+  const pf = G.factions[G.playerId];
+  const sel = document.getElementById('rewardAmount');
+  const cost = parseInt(sel.value);
+  const bonuses = {500:5, 1500:12, 3000:22, 6000:40};
+  const loyaltyBonus = bonuses[cost] || 12;
+
+  if(pf.gold < cost) { showNotification('금이 부족합니다', 'danger'); return; }
+  pf.gold -= cost;
+  gen.loyalty = Math.min(100, gen.loyalty + loyaltyBonus);
+  addLog(`🎁 ${gen.name}에게 ${cost.toLocaleString()}금 포상! 충성 +${loyaltyBonus} → ${gen.loyalty}`, 'success');
+  closeModal();
+  renderAll();
+}
+
+// =============================================
+// SEARCH CITY FOR HIDDEN GENERALS
+// =============================================
+function openSearchCityModal() {
+  if(!G.selectedCity) { showNotification('탐색할 지역을 선택하세요', 'danger'); return; }
+  const city = G.cities[G.selectedCity];
+  const region = REGION_MAP[G.selectedCity];
+  const pf = G.factions[G.playerId];
+  const searchCost = 800;
+
+  showModal(`
+    <div class="modal-box">
+      <div class="modal-header">🔍 ${region.name} 인재 탐색
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;line-height:1.6">
+          재야에 숨은 인재를 찾아봅니다.<br>
+          명성이 높을수록, 지역 개발도가 높을수록 인재를 발견할 확률이 높아집니다.
+        </div>
+        <div class="info-row"><span class="lbl">탐색 비용</span><span class="val">${searchCost}금</span></div>
+        <div class="info-row"><span class="lbl">보유 금</span><span class="val">${pf.gold.toLocaleString()}</span></div>
+        <div class="info-row"><span class="lbl">나의 명성</span><span class="val">${pf.fame}</span></div>
+        <div class="info-row"><span class="lbl">지역 개발도</span><span class="val">${city.development}%</span></div>
+        <div style="margin-top:8px;font-size:11px">
+          발견 확률: <span style="color:var(--gold)">${Math.min(90, Math.floor(20 + pf.fame * 0.3 + city.development * 0.3))}%</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray" onclick="closeModal()">취소</button>
+        <button class="btn btn-primary" onclick="executeSearchCity()">탐색 (${searchCost}금)</button>
+      </div>
+    </div>
+  `);
+}
+
+function executeSearchCity() {
+  const pf = G.factions[G.playerId];
+  const searchCost = 800;
+  if(pf.gold < searchCost) { showNotification('금이 부족합니다', 'danger'); return; }
+
+  const city = G.cities[G.selectedCity];
+  const discoverChance = Math.min(0.9, 0.2 + pf.fame * 0.003 + city.development * 0.003);
+
+  pf.gold -= searchCost;
+
+  if(Math.random() > discoverChance) {
+    addLog(`🔍 ${REGION_MAP[G.selectedCity].name} 탐색 - 인재를 찾지 못했습니다`, 'default');
+    closeModal();
+    showNotification('인재를 찾지 못했습니다', '');
+    return;
+  }
+
+  // Find a free general (not yet recruited, not rebels)
+  const candidates = Object.values(G.generals).filter(g =>
+    !g.isRecruited && !g.rebels && g.role !== 'ruler'
+  );
+
+  if(candidates.length === 0) {
+    addLog(`🔍 ${REGION_MAP[G.selectedCity].name} 탐색 - 더 이상 재야 인재가 없습니다`, 'default');
+    closeModal();
+    return;
+  }
+
+  // Pick a random candidate, weighted by stat total
+  const candidate = candidates[Math.floor(Math.random() * Math.min(candidates.length, 5))];
+  const statTotal = candidate.wu + candidate.zhi + candidate.tong + candidate.pol;
+  const recruitCost = statTotal * 15;
+  const fameReq = Math.floor(statTotal / 4) - 10;
+
+  closeModal();
+
+  // Show recruit option
+  showModal(`
+    <div class="modal-box">
+      <div class="modal-header">✨ 인재 발견!
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+          <div style="font-size:40px;background:rgba(201,168,76,0.1);border:1px solid var(--gold);width:60px;height:60px;display:flex;align-items:center;justify-content:center">${candidate.emoji}</div>
+          <div>
+            <div style="font-family:'Noto Serif KR';font-size:18px;color:var(--gold)">${candidate.name}</div>
+            <div style="font-size:11px;color:var(--text-dim)">${getRoleName(candidate.role)} · ${candidate.bio}</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:10px">
+          <div class="stat-box"><div class="s-label">무력</div><div class="s-val" style="color:${candidate.wu>=90?'#ff6b6b':candidate.wu>=70?'#ffd700':'#e8d5a0'}">${candidate.wu}</div></div>
+          <div class="stat-box"><div class="s-label">지력</div><div class="s-val" style="color:${candidate.zhi>=90?'#6bb5ff':candidate.zhi>=70?'#a0c8ff':'#e8d5a0'}">${candidate.zhi}</div></div>
+          <div class="stat-box"><div class="s-label">통솔</div><div class="s-val" style="color:${candidate.tong>=90?'#6bff6b':candidate.tong>=70?'#a0ffa0':'#e8d5a0'}">${candidate.tong}</div></div>
+          <div class="stat-box"><div class="s-label">정치</div><div class="s-val" style="color:${candidate.pol>=90?'#ff9fff':candidate.pol>=70?'#d0a0ff':'#e8d5a0'}">${candidate.pol}</div></div>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">특기: ${candidate.skills.join(', ')}</div>
+        <div class="info-row"><span class="lbl">영입 비용</span><span class="val">${recruitCost.toLocaleString()}금</span></div>
+        <div class="info-row"><span class="lbl">필요 명성</span><span class="val">${Math.max(0, fameReq)}</span></div>
+        <div class="info-row"><span class="lbl">보유 금</span><span class="val ${pf.gold >= recruitCost ? 'good' : 'bad'}">${pf.gold.toLocaleString()}</span></div>
+        <div class="info-row"><span class="lbl">나의 명성</span><span class="val ${pf.fame >= Math.max(0,fameReq) ? 'good' : 'bad'}">${pf.fame}</span></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray" onclick="closeModal()">보내기</button>
+        <button class="btn btn-gold" onclick="recruitDiscoveredGeneral('${candidate.id}', ${recruitCost}, ${Math.max(0,fameReq)})"
+          ${pf.gold < recruitCost || pf.fame < Math.max(0,fameReq) ? 'disabled style="opacity:0.4;cursor:not-allowed"' : ''}>
+          영입 (${recruitCost.toLocaleString()}금)
+        </button>
+      </div>
+    </div>
+  `);
+}
+
+function recruitDiscoveredGeneral(genId, cost, fameReq) {
+  const pf = G.factions[G.playerId];
+  const gen = G.generals[genId];
+  if(!gen) return;
+  if(pf.gold < cost) { showNotification('금이 부족합니다', 'danger'); return; }
+  if(pf.fame < fameReq) { showNotification('명성이 부족합니다', 'danger'); return; }
+
+  pf.gold -= cost;
+  gen.isRecruited = true;
+  gen.freeAgent = false;
+  gen.rebels = false;
+  gen.factionId = G.playerId;
+  gen.loyalty = 65 + Math.floor(Math.random() * 20);
+  gen.troops = 500 + Math.floor(Math.random() * 1500);
+  gen.assignedCity = G.selectedCity || getPlayerCities()[0]?.id || null;
+
+  if(!pf.generals.includes(genId)) pf.generals.push(genId);
+
+  addLog(`✨ ${gen.name} 영입 성공! (금 -${cost.toLocaleString()}) 충성:${gen.loyalty}`, 'success');
+  showNotification(`✨ ${gen.name} 합류!`, '');
+  closeModal();
+  renderAll();
+}
+
+console.log('확장 시스템 로드 완료');
+</script>
+</body>
+</html>
