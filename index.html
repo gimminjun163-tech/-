@@ -1460,24 +1460,81 @@ function initGameState(scenarioIdx, playerId) {
     });
   });
   
-  // Player faction
+  // Player faction - starting companions by character
   const playerFactionId = 'player';
+
+  // Define starting companions for each playable character
+  const startingCompanions = {
+    // 황건적의 난
+    liubei:    ['guanyu','zhangfei'],
+    caocao:    ['xiahou_dun','dian_wei','guo_jia'],
+    sun_jian:  ['cheng_pu','han_dang','huang_gai'],
+    gongsun_zan: [],
+    // 동탁의 폭정
+    lv_bu:     ['chen_gong'],
+    sunquan:   ['zhou_yu','lu_su'],
+    yuanshao:  ['yan_liang','tian_feng'],
+    // 관도 대전
+    // (caocao, liubei, yuanshao, sunquan already covered)
+    // 적벽 대전
+    zhuge_liang: ['liubei','zhao_yun','zhangfei'],
+  };
+
+  // Scenario-based extra companions if choice matches
+  const scenarioExtraCompanions = {
+    0: { // 황건적의 난
+      liubei: ['guanyu','zhangfei'],
+      caocao: ['xiahou_dun','xiahou_yuan','dian_wei','guo_jia','xun_yu'],
+      sun_jian: ['cheng_pu','han_dang','huang_gai','taishi_ci'],
+      gongsun_zan: [],
+    },
+    1: { // 동탁의 폭정
+      caocao: ['xiahou_dun','xiahou_yuan','dian_wei','xu_chu','guo_jia','xun_yu'],
+      liubei: ['guanyu','zhangfei','zhao_yun'],
+      sunquan: ['zhou_yu','lu_su','gan_ning','huang_gai','cheng_pu'],
+      lv_bu:  ['chen_gong'],
+    },
+    2: { // 관도 대전
+      caocao: ['xiahou_dun','zhang_liao','xu_huang','cao_ren','guo_jia','jia_xu','xu_chu','zhang_he'],
+      liubei: ['guanyu','zhangfei','zhao_yun'],
+      yuanshao: ['yan_liang','wen_chou','tian_feng','ju_shou'],
+      sunquan: ['zhou_yu','lu_su','gan_ning','taishi_ci','huang_gai','lu_meng'],
+    },
+    3: { // 적벽 대전
+      caocao: ['xiahou_dun','zhang_liao','xu_huang','cao_ren','jia_xu','xu_chu','zhang_he','sima_yi','li_dian','yue_jin'],
+      sunquan: ['zhou_yu','lu_su','lu_meng','gan_ning','taishi_ci','huang_gai','cheng_pu','han_dang','zhou_tai','lu_xun'],
+      liubei: ['guanyu','zhangfei','zhao_yun','pang_tong','wei_yan','huang_zhong'],
+      zhuge_liang: ['liubei','guanyu','zhangfei','zhao_yun','wei_yan','huang_zhong'],
+    },
+  };
+
+  // Get companions for this scenario + character
+  const companions = (scenarioExtraCompanions[scenarioIdx] && scenarioExtraCompanions[scenarioIdx][playerId])
+    ? scenarioExtraCompanions[scenarioIdx][playerId]
+    : (startingCompanions[playerId] || []);
+
+  // Build player generals list: leader + companions (remove any that belong to other factions)
+  const playerGeneralIds = [playerId, ...companions.filter(gid => {
+    // Don't steal generals already in another faction that will remain in game
+    return true; // Allow - we'll remove from other factions below
+  })];
+
   factions[playerFactionId] = {
     id: playerFactionId, name: playerChoice.name + '의 세력',
     color: '#ce4a4a',
     gold: 12000, food: 15000, horses: 2000,
-    generals: [playerId],
+    generals: playerGeneralIds,
     relations: {},
     fame: 30,
     isPlayer: true,
   };
   cities[playerChoice.startCity].owner = playerFactionId;
   cities[playerChoice.startCity].troops = 5000;
-  
-  // Remove player from other factions
+
+  // Remove player and companions from other factions
   Object.values(factions).forEach(f => {
     if(f.id !== playerFactionId) {
-      f.generals = f.generals.filter(g => g !== playerId);
+      f.generals = f.generals.filter(g => !playerGeneralIds.includes(g));
     }
   });
   
@@ -1513,11 +1570,31 @@ function initGameState(scenarioIdx, playerId) {
   
   // Assign generals to factions
   Object.values(factions).forEach(f => {
-    f.generals.forEach(gid => {
+    f.generals.forEach((gid, idx) => {
       if(generals[gid]) {
         generals[gid].isRecruited = true;
         generals[gid].factionId = f.id;
-        generals[gid].troops = 2000 + Math.floor(Math.random()*3000);
+        generals[gid].freeAgent = false;
+        generals[gid].rebels = false;
+        if(f.id === playerFactionId) {
+          // Player generals: leader gets more troops, companions get varied
+          if(gid === playerId) {
+            generals[gid].troops = 3000;
+            generals[gid].assignedCity = playerChoice.startCity;
+            generals[gid].loyalty = 100;
+          } else {
+            generals[gid].troops = 500 + Math.floor(Math.random() * 2000);
+            generals[gid].assignedCity = playerChoice.startCity;
+            generals[gid].loyalty = 75 + Math.floor(Math.random() * 25);
+          }
+        } else {
+          generals[gid].troops = 2000 + Math.floor(Math.random() * 3000);
+          // Assign AI generals to their faction's first city
+          const factionCities = Object.values(cities).filter(c => c.owner === f.id);
+          if(factionCities.length > 0) {
+            generals[gid].assignedCity = factionCities[Math.floor(idx / 2) % factionCities.length].id;
+          }
+        }
       }
     });
   });
@@ -2236,11 +2313,14 @@ function conductBattle(army) {
   // Tactic bonus
   const tacticBonus = getTacticBonus(army.tactic, REGION_MAP[army.to].terrain, G.weather);
   attackerBonus *= tacticBonus;
-  
+
+  // Fatigue penalty from long marches
+  const fatigueMult = 1 - Math.min(0.5, (army.fatiguePenalty || 0) / 100);
+
   // Weather effect
   const weatherEffect = getWeatherEffect(G.weather, army.factionId === G.playerId);
-  
-  const attackPower = attackerTroops * attackerBonus * weatherEffect;
+
+  const attackPower = attackerTroops * attackerBonus * weatherEffect * fatigueMult;
   const defensePower = defenderTroops * (1 + defBonus) * 1.1; // defender always has slight advantage
   
   const attackerWinChance = attackPower / (attackPower + defensePower);
@@ -2714,73 +2794,99 @@ function closeModal() {
 
 // ATTACK MODAL
 function openAttackModal() {
-  if(!G.selectedCity) {
-    showNotification('출발 지역을 선택하세요', 'danger');
+  // 출발 성: 플레이어 소유 성 중 선택 (기본: 현재 선택된 성)
+  const playerCities = getPlayerCities();
+  if(playerCities.length === 0) {
+    showNotification('출발할 영지가 없습니다', 'danger');
     return;
   }
-  const fromCity = G.cities[G.selectedCity];
-  if(fromCity.owner !== G.playerId) {
-    showNotification('우리 영토에서만 출전할 수 있습니다', 'danger');
-    return;
-  }
-  
-  const adj = REGION_MAP[G.selectedCity].adjacent;
-  const adjOptions = adj.map(id => {
-    const c = G.cities[id];
-    const r = REGION_MAP[id];
-    if(!r) return '';
-    const dist = calcDistance(G.selectedCity, id);
-    return `<option value="${id}">${r.name} (${G.factions[c.owner]?.name || '중립'}, 병력:${c.troops.toLocaleString()}, ${dist}일)</option>`;
-  }).join('');
-  
-  const genOptions = getPlayerGenerals().filter(g => g.assignedCity === G.selectedCity || !g.assignedCity).map(g =>
-    `<label style="display:flex;align-items:center;gap:5px;padding:3px 0;cursor:pointer">
-      <input type="checkbox" value="${g.id}" style="cursor:pointer">
-      ${g.emoji} ${g.name} [${getRoleName(g.role)}] 무${g.wu}/지${g.zhi} 병력:${g.troops.toLocaleString()}
-    </label>`
+
+  const defaultFrom = (G.selectedCity && G.cities[G.selectedCity]?.owner === G.playerId)
+    ? G.selectedCity : playerCities[0].id;
+
+  // 모든 적/중립 성을 목표로 가능
+  const allTargets = Object.values(G.cities).filter(c => c.owner !== G.playerId);
+
+  const fromOptions = playerCities.map(c =>
+    `<option value="${c.id}" ${c.id === defaultFrom ? 'selected' : ''}>${REGION_MAP[c.id].name} (주둔: ${c.troops.toLocaleString()}명)</option>`
   ).join('');
-  
+
+  // Build target options grouped by distance from defaultFrom
+  const targetOptions = allTargets
+    .map(c => {
+      const r = REGION_MAP[c.id];
+      if(!r) return null;
+      const dist = calcDistance(defaultFrom, c.id);
+      const ownerName = G.factions[c.owner]?.name || '중립';
+      return { id: c.id, name: r.name, owner: ownerName, troops: c.troops, dist };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.dist - b.dist)
+    .map(t => {
+      const adjTag = t.dist === 1 ? ' [인접]' : '';
+      const fatiguePenalty = t.dist > 3 ? ` ⚠️피로+${(t.dist-3)*10}%` : '';
+      return `<option value="${t.id}">${t.name}${adjTag} — ${t.owner} 병력:${t.troops.toLocaleString()} (${t.dist}일 행군${fatiguePenalty})</option>`;
+    }).join('');
+
   const pf = G.factions[G.playerId];
-  
+  const fromCity = G.cities[defaultFrom];
+
+  const genOptions = getPlayerGenerals()
+    .map(g => `<label style="display:flex;align-items:center;gap:5px;padding:3px 0;cursor:pointer">
+      <input type="checkbox" value="${g.id}" style="cursor:pointer" ${g.assignedCity === defaultFrom ? 'checked' : ''}>
+      ${g.emoji} ${g.name} [${getRoleName(g.role)}] 무${g.wu}/지${g.zhi}/통${g.tong} 병력:${g.troops.toLocaleString()} 주둔:${g.assignedCity ? REGION_MAP[g.assignedCity]?.name||'?' : '미배치'}
+    </label>`).join('');
+
   showModal(`
-    <div class="modal-box">
-      <div class="modal-header">⚔️ 출전 명령 - ${REGION_MAP[G.selectedCity].name}에서 출발
+    <div class="modal-box" style="max-width:580px">
+      <div class="modal-header">⚔️ 출전 명령
         <span class="modal-close" onclick="closeModal()">✕</span>
       </div>
       <div class="modal-body">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
           <div>
-            <div style="color:var(--gold);font-size:11px;margin-bottom:5px">공격 목표</div>
-            <select id="attackTarget" style="width:100%">${adjOptions}</select>
+            <div style="color:var(--gold);font-size:11px;margin-bottom:4px">📍 출발 성</div>
+            <select id="attackFrom" style="width:100%" onchange="updateAttackFromInfo()">${fromOptions}</select>
+            <div id="attackFromInfo" style="font-size:10px;color:var(--text-dim);margin-top:3px">주둔병: ${fromCity.troops.toLocaleString()}명</div>
           </div>
           <div>
-            <div style="color:var(--gold);font-size:11px;margin-bottom:5px">전술</div>
-            <select id="attackTactic" style="width:100%">
-              <option value="normal">정면공격 (기본)</option>
-              <option value="surprise">기습 (+30% 공격력)</option>
-              <option value="ambush">매복 (+25%)</option>
-              <option value="fire">화공 (강변/평야 +40%)</option>
-              <option value="feint">유인 (+15%)</option>
-              <option value="envelop">포위 (+20%)</option>
-              <option value="siege">공성전 (-10%, 방어력 무시)</option>
-            </select>
+            <div style="color:var(--gold);font-size:11px;margin-bottom:4px">🎯 공격 목표</div>
+            <select id="attackTarget" style="width:100%" onchange="updateAttackTargetInfo()">${targetOptions}</select>
+            <div id="attackTargetInfo" style="font-size:10px;color:var(--text-dim);margin-top:3px">목표를 선택하세요</div>
           </div>
         </div>
-        <div style="margin-top:10px">
-          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">출전 장수 (주둔지에서 선택)</div>
-          <div style="background:rgba(0,0,0,0.3);padding:8px;max-height:150px;overflow-y:auto">
-            ${genOptions || '<div style="color:var(--text-dim)">이 지역에 배치된 장수가 없습니다</div>'}
+        <div style="margin-bottom:10px">
+          <div style="color:var(--gold);font-size:11px;margin-bottom:4px">전술</div>
+          <select id="attackTactic" style="width:100%">
+            <option value="normal">정면공격 (기본)</option>
+            <option value="surprise">기습 (+30% 공격력, 안개 시 +추가)</option>
+            <option value="ambush">매복 (+25%)</option>
+            <option value="fire">화공 (강변/평야 +40%, 비/눈 시 약화)</option>
+            <option value="feint">유인 (+15%)</option>
+            <option value="envelop">포위 (+20%)</option>
+            <option value="siege">공성전 (방어력 50% 무시)</option>
+          </select>
+        </div>
+        <div style="margin-bottom:10px">
+          <div style="color:var(--gold);font-size:11px;margin-bottom:4px">출전 장수 <span style="color:var(--text-dim)">(장수 직속 병력 + 성 주둔병 모두 사용 가능)</span></div>
+          <div style="background:rgba(0,0,0,0.3);padding:8px;max-height:130px;overflow-y:auto;font-size:11px">
+            ${genOptions || '<div style="color:var(--text-dim)">장수가 없습니다</div>'}
           </div>
         </div>
-        <div style="margin-top:10px">
-          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">출전 병력 (주둔병: ${fromCity.troops.toLocaleString()})</div>
-          <input type="range" id="attackTroops" min="100" max="${fromCity.troops}" value="${Math.floor(fromCity.troops*0.5)}" oninput="document.getElementById('attackTroopsVal').textContent=this.value">
-          <div style="text-align:right;color:var(--gold)"><span id="attackTroopsVal">${Math.floor(fromCity.troops*0.5)}</span>명</div>
+        <div style="margin-bottom:10px">
+          <div style="color:var(--gold);font-size:11px;margin-bottom:4px">출전 병력 <span id="attackTroopsLabel" style="color:var(--text-dim)">(주둔병: ${fromCity.troops.toLocaleString()})</span></div>
+          <input type="range" id="attackTroops" min="100" max="${Math.max(100, fromCity.troops)}" value="${Math.floor(fromCity.troops*0.5)}"
+            oninput="document.getElementById('attackTroopsVal').textContent=parseInt(this.value).toLocaleString()">
+          <div style="text-align:right;color:var(--gold)"><span id="attackTroopsVal">${Math.floor(fromCity.troops*0.5).toLocaleString()}</span>명</div>
         </div>
-        <div style="margin-top:10px">
-          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">휴대 군량 (보유: ${pf.food.toLocaleString()})</div>
-          <input type="range" id="attackFood" min="0" max="${Math.min(pf.food, 20000)}" value="${Math.min(pf.food, 5000)}" oninput="document.getElementById('attackFoodVal').textContent=this.value">
-          <div style="text-align:right;color:var(--gold)"><span id="attackFoodVal">${Math.min(pf.food, 5000)}</span> 석</div>
+        <div>
+          <div style="color:var(--gold);font-size:11px;margin-bottom:4px">휴대 군량 (보유: ${pf.food.toLocaleString()})</div>
+          <input type="range" id="attackFood" min="0" max="${Math.min(pf.food, 30000)}" value="${Math.min(pf.food, 5000)}"
+            oninput="document.getElementById('attackFoodVal').textContent=parseInt(this.value).toLocaleString()">
+          <div style="text-align:right;color:var(--gold)"><span id="attackFoodVal">${Math.min(pf.food, 5000).toLocaleString()}</span> 석</div>
+        </div>
+        <div id="attackSummary" style="margin-top:10px;background:rgba(201,168,76,0.05);border:1px solid var(--border);padding:8px;font-size:11px;color:var(--text-dim)">
+          ℹ️ 출발 성과 목표를 선택하면 행군 정보가 표시됩니다.
         </div>
       </div>
       <div class="modal-footer">
@@ -2789,31 +2895,102 @@ function openAttackModal() {
       </div>
     </div>
   `);
+
+  // Initial summary update
+  setTimeout(updateAttackTargetInfo, 50);
+}
+
+function updateAttackFromInfo() {
+  const fromId = document.getElementById('attackFrom')?.value;
+  if(!fromId) return;
+  const city = G.cities[fromId];
+  if(!city) return;
+  document.getElementById('attackFromInfo').textContent = `주둔병: ${city.troops.toLocaleString()}명`;
+  const slider = document.getElementById('attackTroops');
+  if(slider) {
+    slider.max = Math.max(100, city.troops);
+    slider.value = Math.floor(city.troops * 0.5);
+    document.getElementById('attackTroopsVal').textContent = Math.floor(city.troops*0.5).toLocaleString();
+    document.getElementById('attackTroopsLabel').textContent = `(주둔병: ${city.troops.toLocaleString()})`;
+  }
+  // Re-sort target list by distance from new from-city
+  const targetSel = document.getElementById('attackTarget');
+  if(targetSel) {
+    const allTargets = Object.values(G.cities).filter(c => c.owner !== G.playerId);
+    const sorted = allTargets.map(c => {
+      const r = REGION_MAP[c.id];
+      if(!r) return null;
+      const dist = calcDistance(fromId, c.id);
+      return { id: c.id, name: r.name, owner: G.factions[c.owner]?.name||'중립', troops: c.troops, dist };
+    }).filter(Boolean).sort((a,b) => a.dist - b.dist);
+    const prevVal = targetSel.value;
+    targetSel.innerHTML = sorted.map(t => {
+      const adjTag = t.dist === 1 ? ' [인접]' : '';
+      const fatiguePenalty = t.dist > 3 ? ` ⚠️피로+${(t.dist-3)*10}%` : '';
+      return `<option value="${t.id}" ${t.id === prevVal ? 'selected' : ''}>${t.name}${adjTag} — ${t.owner} 병력:${t.troops.toLocaleString()} (${t.dist}일 행군${fatiguePenalty})</option>`;
+    }).join('');
+  }
+  updateAttackTargetInfo();
+}
+
+function updateAttackTargetInfo() {
+  const fromId = document.getElementById('attackFrom')?.value;
+  const targetId = document.getElementById('attackTarget')?.value;
+  if(!fromId || !targetId) return;
+  const dist = calcDistance(fromId, targetId);
+  const targetCity = G.cities[targetId];
+  const targetRegion = REGION_MAP[targetId];
+  if(!targetCity || !targetRegion) return;
+  const ownerName = G.factions[targetCity.owner]?.name || '중립';
+  const fatigue = dist > 3 ? `피로 +${(dist-3)*10}%` : '행군 피로 없음';
+  const foodEstimate = (parseInt(document.getElementById('attackTroops')?.value)||1000) * dist * 0.01;
+  document.getElementById('attackTargetInfo').textContent =
+    `${targetRegion.terrain} · ${ownerName} · 방어 ${targetCity.defense} · ${dist}일 행군 · ${fatigue}`;
+  const summary = document.getElementById('attackSummary');
+  if(summary) {
+    const isAdjacent = dist === 1;
+    const warningColor = dist > 5 ? '#ff6b6b' : dist > 3 ? '#ffd700' : '#6bff6b';
+    summary.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+        <span>행군 거리: <b style="color:${warningColor}">${dist}일</b>${isAdjacent ? ' <span style="color:#6bff6b">[인접]</span>' : ''}</span>
+        <span>지형: <b style="color:var(--text)">${targetRegion.terrain}</b></span>
+        <span>적 병력: <b style="color:#ff6b6b">${targetCity.troops.toLocaleString()}명</b></span>
+        <span>적 방어력: <b style="color:var(--text)">${targetCity.defense}</b></span>
+        <span>예상 군량 소모: <b style="color:var(--gold)">~${Math.ceil(foodEstimate).toLocaleString()}석</b></span>
+        <span>피로도: <b style="color:${dist>3?'#ff6b6b':'#6bff6b'}">${fatigue}</b></span>
+      </div>
+      ${dist > 5 ? '<div style="color:#ff6b6b;margin-top:4px">⚠️ 장거리 원정! 군량 소모가 크고 병사 피로도가 심합니다.</div>' : ''}
+    `;
+  }
 }
 
 function executeAttack() {
+  const fromId = document.getElementById('attackFrom').value;
   const targetId = document.getElementById('attackTarget').value;
   const tactic = document.getElementById('attackTactic').value;
   const troops = parseInt(document.getElementById('attackTroops').value);
   const food = parseInt(document.getElementById('attackFood').value);
-  
+
   const selectedGens = Array.from(document.querySelectorAll('#activeModal input[type=checkbox]:checked')).map(cb => cb.value);
-  
-  const fromCity = G.cities[G.selectedCity];
-  if(fromCity.troops < troops) {
-    showNotification('병력이 부족합니다', 'danger');
-    return;
-  }
-  
+
+  const fromCity = G.cities[fromId];
+  if(!fromCity) { showNotification('출발 성을 확인하세요', 'danger'); return; }
+  if(fromCity.troops < troops) { showNotification('주둔병이 부족합니다', 'danger'); return; }
+  if(G.factions[G.playerId].food < food) { showNotification('군량이 부족합니다', 'danger'); return; }
+
+  // Deduct
   fromCity.troops -= troops;
   G.factions[G.playerId].food -= food;
-  
-  const dist = calcDistance(G.selectedCity, targetId);
-  
+
+  const dist = calcDistance(fromId, targetId);
+
+  // Long-distance fatigue penalty baked into army
+  const fatiguePenalty = Math.max(0, (dist - 3) * 10); // % attack reduction on arrival
+
   const army = {
     id: 'army_' + Date.now(),
     factionId: G.playerId,
-    from: G.selectedCity,
+    from: fromId,
     to: targetId,
     troops: troops,
     generals: selectedGens,
@@ -2821,18 +2998,23 @@ function executeAttack() {
     progress: 0,
     totalDays: Math.max(1, dist),
     food: food,
+    fatiguePenalty: fatiguePenalty,
   };
-  
+
   // Update general assignments
   selectedGens.forEach(gid => {
-    if(G.generals[gid]) G.generals[gid].assignedCity = null;
+    if(G.generals[gid]) {
+      G.generals[gid].assignedCity = null;
+      G.generals[gid].fatigue = Math.min(100, G.generals[gid].fatigue + fatiguePenalty);
+    }
   });
-  
+
   G.armies.push(army);
-  
+
   const tacticNames = { normal:'정면공격', surprise:'기습', ambush:'매복', fire:'화공', feint:'유인', envelop:'포위', siege:'공성전' };
-  addLog(`⚔️ ${REGION_MAP[G.selectedCity].name} → ${REGION_MAP[targetId].name} 출전! 병력:${troops.toLocaleString()} 전술:${tacticNames[tactic]} (${dist}일 행군)`, 'combat');
-  
+  const fatigueNote = fatiguePenalty > 0 ? ` (피로 -${fatiguePenalty}%)` : '';
+  addLog(`⚔️ ${REGION_MAP[fromId].name} → ${REGION_MAP[targetId].name} 출전! 병력:${troops.toLocaleString()} 전술:${tacticNames[tactic]} ${dist}일 행군${fatigueNote}`, 'combat');
+
   closeModal();
   renderAll();
 }
