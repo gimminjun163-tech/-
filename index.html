@@ -643,6 +643,11 @@ select option {
   to { transform: translateX(0); opacity: 1; }
 }
 
+@keyframes slideUp {
+  from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+  to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
 /* SCROLLBAR */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg-dark); }
@@ -1068,7 +1073,13 @@ select option {
       </div>
     </button>
   </div>
-  <div style="color:var(--text-dim);font-size:11px;margin-top:10px">▼ 시나리오를 선택하면 주인공을 고를 수 있습니다</div>
+
+  <!-- Save/Load section — always rendered, JS fills content -->
+  <div id="titleSaveSection" style="width:500px;margin-top:8px">
+    <!-- filled by renderTitleSaveSection() -->
+  </div>
+
+  <div style="color:var(--text-dim);font-size:11px;margin-top:14px">▼ 시나리오를 선택하면 주인공을 고를 수 있습니다</div>
 </div>
 
 <!-- GAME SCREEN -->
@@ -1089,6 +1100,10 @@ select option {
       <button class="top-btn gold" onclick="showCharInfo()">👤 내정보</button>
       <button class="top-btn" onclick="showDiplomacy()">🤝 외교</button>
       <button class="top-btn" onclick="showRumors()">📜 소문</button>
+      <button class="top-btn" onclick="saveGame()" style="background:rgba(26,90,42,0.4);border-color:#2d6e2d;color:#6bff6b">💾 저장</button>
+      <button class="top-btn" onclick="openLoadModal()" style="background:rgba(26,58,110,0.4);border-color:#3a6ace;color:#7ab0ff">📂 불러오기</button>
+      <button class="top-btn" onclick="confirmSaveAndQuit()" style="background:rgba(80,40,0,0.4);border-color:#a06020;color:#ffb84d">💾↩ 저장 후 종료</button>
+      <button class="top-btn" onclick="confirmRestart()" style="background:rgba(60,10,10,0.4);border-color:#7a2020;color:#ff8080">🔄 처음부터</button>
       <button class="next-day-btn" onclick="nextDay()">다음날 ▶</button>
     </div>
   </div>
@@ -1686,6 +1701,27 @@ function renderTopBar() {
   document.getElementById('weatherIcon').textContent = weathers[G.weather] || '☀️';
   document.getElementById('seasonText').textContent = seasons[G.season] || '봄';
   document.getElementById('seasonDisplay').textContent = `${seasons[G.season]} · ${getWeatherName(G.weather)}`;
+
+  // Also refresh any open modal elements that display gold/food/horse
+  refreshModalResources();
+}
+
+// Refresh resource values inside any currently open modal
+function refreshModalResources() {
+  const pf = getPlayerFaction();
+  // Update all elements marked with data-resource attribute in the active modal
+  document.querySelectorAll('[data-resource="gold"]').forEach(el => {
+    el.textContent = pf.gold.toLocaleString();
+  });
+  document.querySelectorAll('[data-resource="food"]').forEach(el => {
+    el.textContent = pf.food.toLocaleString();
+  });
+  document.querySelectorAll('[data-resource="horse"]').forEach(el => {
+    el.textContent = pf.horses.toLocaleString();
+  });
+  document.querySelectorAll('[data-resource="fame"]').forEach(el => {
+    el.textContent = pf.fame;
+  });
 }
 
 function getWeatherName(w) {
@@ -2880,7 +2916,7 @@ function openAttackModal() {
           <div style="text-align:right;color:var(--gold)"><span id="attackTroopsVal">${Math.floor(fromCity.troops*0.5).toLocaleString()}</span>명</div>
         </div>
         <div>
-          <div style="color:var(--gold);font-size:11px;margin-bottom:4px">휴대 군량 (보유: ${pf.food.toLocaleString()})</div>
+          <div style="color:var(--gold);font-size:11px;margin-bottom:4px">휴대 군량 (보유: <span data-resource="food">${pf.food.toLocaleString()}</span>)</div>
           <input type="range" id="attackFood" min="0" max="${Math.min(pf.food, 30000)}" value="${Math.min(pf.food, 5000)}"
             oninput="document.getElementById('attackFoodVal').textContent=parseInt(this.value).toLocaleString()">
           <div style="text-align:right;color:var(--gold)"><span id="attackFoodVal">${Math.min(pf.food, 5000).toLocaleString()}</span> 석</div>
@@ -3034,7 +3070,7 @@ function openRecruitModal() {
         <span class="modal-close" onclick="closeModal()">✕</span>
       </div>
       <div class="modal-body">
-        <div class="info-row"><span class="lbl">보유 금</span><span class="val">${pf.gold.toLocaleString()}</span></div>
+        <div class="info-row"><span class="lbl">보유 금</span><span class="val"><span data-resource="gold">${pf.gold.toLocaleString()}</span></span></div>
         <div class="info-row"><span class="lbl">현재 주둔병</span><span class="val">${city.troops.toLocaleString()}</span></div>
         <div class="info-row"><span class="lbl">최대 수용</span><span class="val">${city.maxTroops.toLocaleString()}</span></div>
         <div style="margin-top:10px">
@@ -3085,8 +3121,10 @@ function executeRecruit() {
   
   if(typeEl.value === 'cavalry' && pf.horses < count) { showNotification('군마가 부족합니다', 'danger'); return; }
   if(typeEl.value === 'cavalry') pf.horses -= count;
+  renderTopBar(); // instant resource refresh
   
   pf.gold -= totalCost;
+  renderTopBar(); // instant resource refresh
   city.troops += count;
   
   addLog(`⚔️ ${REGION_MAP[G.selectedCity].name}에서 ${typeEl.options[typeEl.selectedIndex].text.split('(')[0].trim()} ${count.toLocaleString()}명 모집 (금 -${totalCost.toLocaleString()})`, 'success');
@@ -3260,6 +3298,7 @@ function recruitGeneral(genId, cost) {
   if(pf.gold < cost) { showNotification('금이 부족합니다', 'danger'); return; }
   
   pf.gold -= cost;
+  renderTopBar(); // instant resource refresh
   gen.isRecruited = true;
   gen.rebels = false;
   gen.factionId = G.playerId;
@@ -3373,6 +3412,7 @@ function diploAction(factionId, action) {
     const cost = 2000;
     if(pf.gold < cost) { showNotification('금이 부족합니다', 'danger'); return; }
     pf.gold -= cost;
+  renderTopBar(); // instant resource refresh
     pf.relations[factionId].value = Math.min(100, pf.relations[factionId].value + 10);
     tf.relations[G.playerId].value = Math.min(100, tf.relations[G.playerId].value + 10);
     addLog(`🎁 ${tf.name}에게 선물 (금 -${cost})! 관계 +10`, 'diplo');
@@ -3444,6 +3484,7 @@ function executeSendAmbassador() {
     ally: () => {
       if(pf.gold < 1000) { showNotification('금이 부족합니다', 'danger'); return; }
       pf.gold -= 1000;
+  renderTopBar(); // instant resource refresh
       pf.relations[targetId].value = Math.min(100, pf.relations[targetId].value + 10);
       tf.relations[G.playerId].value = Math.min(100, tf.relations[G.playerId].value + 10);
       addLog(`🤝 ${tf.name}에 동맹 제안 (금 -1000)`, 'diplo');
@@ -3453,6 +3494,7 @@ function executeSendAmbassador() {
     tribute: () => {
       if(pf.gold < 3000) { showNotification('금이 부족합니다', 'danger'); return; }
       pf.gold -= 3000;
+  renderTopBar(); // instant resource refresh
       pf.relations[targetId].value = Math.min(100, pf.relations[targetId].value + 20);
       tf.relations[G.playerId].value = Math.min(100, tf.relations[G.playerId].value + 20);
       addLog(`💰 ${tf.name}에 조공 (금 -3000), 관계 +20`, 'diplo');
@@ -3461,6 +3503,7 @@ function executeSendAmbassador() {
       pf.relations[targetId].value = Math.max(0, pf.relations[targetId].value - 20);
       tf.relations[G.playerId].value = Math.max(0, tf.relations[G.playerId].value - 20);
       pf.fame += 5;
+  renderTopBar(); // instant resource refresh
       addLog(`⚠️ ${tf.name}에 위협 메시지 전달, 명성 +5`, 'warning');
     },
   };
@@ -3488,7 +3531,7 @@ function openGiftModal() {
           <select id="giftTarget" style="width:100%">${factionOptions}</select>
         </div>
         <div>
-          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">금액 (보유: ${pf.gold.toLocaleString()})</div>
+          <div style="color:var(--gold);font-size:11px;margin-bottom:5px">금액 (보유: <span data-resource="gold">${pf.gold.toLocaleString()}</span>)</div>
           <input type="range" id="giftAmount" min="500" max="${Math.min(pf.gold,10000)}" value="1000" oninput="document.getElementById('giftAmountVal').textContent=this.value">
           <div style="text-align:right;color:var(--gold)"><span id="giftAmountVal">1000</span>금</div>
         </div>
@@ -3509,6 +3552,7 @@ function executeGift() {
   if(pf.gold < amount) { showNotification('금이 부족합니다', 'danger'); return; }
   
   pf.gold -= amount;
+  renderTopBar(); // instant resource refresh
   if(!pf.relations[targetId]) pf.relations[targetId] = {type:'neutral',value:50};
   const bonus = Math.floor(amount / 500);
   pf.relations[targetId].value = Math.min(100, pf.relations[targetId].value + bonus);
@@ -3542,7 +3586,7 @@ function openTrainModal() {
             <option value="training">병사 훈련 (금 1000, 기존 병력 전투력 +5%)</option>
           </select>
         </div>
-        <div style="margin-top:5px;color:var(--text-dim);font-size:11px">보유 금: ${pf.gold.toLocaleString()}</div>
+        <div style="margin-top:5px;color:var(--text-dim);font-size:11px">보유 금: <span data-resource="gold">${pf.gold.toLocaleString()}</span></div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-gray" onclick="closeModal()">취소</button>
@@ -3562,6 +3606,7 @@ function executeTrain() {
   
   if(pf.gold < cost) { showNotification('금이 부족합니다', 'danger'); return; }
   pf.gold -= cost;
+  renderTopBar(); // instant resource refresh
   
   const effects = {
     develop: () => { city.development = Math.min(100, city.development + 10); addLog(`🌾 ${REGION_MAP[G.selectedCity].name} 농업 개발! 개발도 +10`, 'success'); },
@@ -3699,9 +3744,9 @@ function showCharInfo() {
           <div style="color:var(--gold);font-size:11px;margin-bottom:5px">세력 현황</div>
           <div class="info-row"><span class="lbl">영지</span><span class="val">${getPlayerCities().length}개</span></div>
           <div class="info-row"><span class="lbl">장수</span><span class="val">${getPlayerGenerals().length}명</span></div>
-          <div class="info-row"><span class="lbl">명성</span><span class="val">${pf.fame}</span></div>
-          <div class="info-row"><span class="lbl">금</span><span class="val">${pf.gold.toLocaleString()}</span></div>
-          <div class="info-row"><span class="lbl">군량</span><span class="val">${pf.food.toLocaleString()}</span></div>
+          <div class="info-row"><span class="lbl">명성</span><span class="val"><span data-resource="fame">${pf.fame}</span></span></div>
+          <div class="info-row"><span class="lbl">금</span><span class="val"><span data-resource="gold">${pf.gold.toLocaleString()}</span></span></div>
+          <div class="info-row"><span class="lbl">군량</span><span class="val"><span data-resource="food">${pf.food.toLocaleString()}</span></span></div>
         </div>
       </div>
       <div class="modal-footer"><button class="btn btn-gray" onclick="closeModal()">닫기</button></div>
@@ -4034,7 +4079,7 @@ function openRewardGeneralModal(genId) {
       </div>
       <div class="modal-body">
         <div class="info-row"><span class="lbl">현재 충성도</span><span class="val" style="color:${gen.loyalty<25?'#ff6b6b':gen.loyalty<50?'#ffd700':'#6bff6b'}">${gen.loyalty}</span></div>
-        <div class="info-row"><span class="lbl">보유 금</span><span class="val">${pf.gold.toLocaleString()}</span></div>
+        <div class="info-row"><span class="lbl">보유 금</span><span class="val"><span data-resource="gold">${pf.gold.toLocaleString()}</span></span></div>
         <div style="margin-top:10px">
           <div style="color:var(--gold);font-size:11px;margin-bottom:5px">포상 금액</div>
           <select id="rewardAmount" style="width:100%">
@@ -4066,6 +4111,7 @@ function executeReward(genId) {
 
   if(pf.gold < cost) { showNotification('금이 부족합니다', 'danger'); return; }
   pf.gold -= cost;
+  renderTopBar(); // instant resource refresh
   gen.loyalty = Math.min(100, gen.loyalty + loyaltyBonus);
   addLog(`🎁 ${gen.name}에게 ${cost.toLocaleString()}금 포상! 충성 +${loyaltyBonus} → ${gen.loyalty}`, 'success');
   closeModal();
@@ -4093,8 +4139,8 @@ function openSearchCityModal() {
           명성이 높을수록, 지역 개발도가 높을수록 인재를 발견할 확률이 높아집니다.
         </div>
         <div class="info-row"><span class="lbl">탐색 비용</span><span class="val">${searchCost}금</span></div>
-        <div class="info-row"><span class="lbl">보유 금</span><span class="val">${pf.gold.toLocaleString()}</span></div>
-        <div class="info-row"><span class="lbl">나의 명성</span><span class="val">${pf.fame}</span></div>
+        <div class="info-row"><span class="lbl">보유 금</span><span class="val"><span data-resource="gold">${pf.gold.toLocaleString()}</span></span></div>
+        <div class="info-row"><span class="lbl">나의 명성</span><span class="val"><span data-resource="fame">${pf.fame}</span></span></div>
         <div class="info-row"><span class="lbl">지역 개발도</span><span class="val">${city.development}%</span></div>
         <div style="margin-top:8px;font-size:11px">
           발견 확률: <span style="color:var(--gold)">${Math.min(90, Math.floor(20 + pf.fame * 0.3 + city.development * 0.3))}%</span>
@@ -4117,6 +4163,7 @@ function executeSearchCity() {
   const discoverChance = Math.min(0.9, 0.2 + pf.fame * 0.003 + city.development * 0.003);
 
   pf.gold -= searchCost;
+  renderTopBar(); // instant resource refresh
 
   if(Math.random() > discoverChance) {
     addLog(`🔍 ${REGION_MAP[G.selectedCity].name} 탐색 - 인재를 찾지 못했습니다`, 'default');
@@ -4167,8 +4214,8 @@ function executeSearchCity() {
         <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">특기: ${candidate.skills.join(', ')}</div>
         <div class="info-row"><span class="lbl">영입 비용</span><span class="val">${recruitCost.toLocaleString()}금</span></div>
         <div class="info-row"><span class="lbl">필요 명성</span><span class="val">${Math.max(0, fameReq)}</span></div>
-        <div class="info-row"><span class="lbl">보유 금</span><span class="val ${pf.gold >= recruitCost ? 'good' : 'bad'}">${pf.gold.toLocaleString()}</span></div>
-        <div class="info-row"><span class="lbl">나의 명성</span><span class="val ${pf.fame >= Math.max(0,fameReq) ? 'good' : 'bad'}">${pf.fame}</span></div>
+        <div class="info-row"><span class="lbl">보유 금</span><span class="val ${pf.gold >= recruitCost ? 'good' : 'bad'}"><span data-resource="gold">${pf.gold.toLocaleString()}</span></span></div>
+        <div class="info-row"><span class="lbl">나의 명성</span><span class="val ${pf.fame >= Math.max(0,fameReq) ? 'good' : 'bad'}"><span data-resource="fame">${pf.fame}</span></span></div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-gray" onclick="closeModal()">보내기</button>
@@ -4189,6 +4236,7 @@ function recruitDiscoveredGeneral(genId, cost, fameReq) {
   if(pf.fame < fameReq) { showNotification('명성이 부족합니다', 'danger'); return; }
 
   pf.gold -= cost;
+  renderTopBar(); // instant resource refresh
   gen.isRecruited = true;
   gen.freeAgent = false;
   gen.rebels = false;
@@ -4205,7 +4253,395 @@ function recruitDiscoveredGeneral(genId, cost, fameReq) {
   renderAll();
 }
 
-console.log('확장 시스템 로드 완료');
+// =============================================
+// SAVE / LOAD SYSTEM
+// =============================================
+
+const SAVE_SLOTS = 3;
+const SAVE_KEY_PREFIX = 'sangukji_save_';
+
+function getSaveKey(slot) {
+  return SAVE_KEY_PREFIX + slot;
+}
+
+function buildSaveData() {
+  return {
+    version: 2,
+    savedAt: new Date().toISOString(),
+    date: G.date,
+    dayCount: G.dayCount,
+    weather: G.weather,
+    season: G.season,
+    playerId: G.playerId,
+    playerLeaderId: G.playerLeaderId,
+    scenarioName: G.scenario?.name || '',
+    // Factions (strip circular / function refs)
+    factions: JSON.parse(JSON.stringify(G.factions)),
+    // Cities
+    cities: JSON.parse(JSON.stringify(G.cities)),
+    // Generals
+    generals: JSON.parse(JSON.stringify(G.generals)),
+    // Armies in transit
+    armies: JSON.parse(JSON.stringify(G.armies)),
+    // Log (last 100)
+    log: G.log.slice(0, 100),
+    // Misc
+    selectedCity: G.selectedCity,
+    selectedGenerals: G.selectedGenerals,
+  };
+}
+
+function saveGame(slot) {
+  // If no slot given, show slot picker
+  if(slot === undefined) {
+    openSaveModal();
+    return;
+  }
+  try {
+    const data = buildSaveData();
+    const json = JSON.stringify(data);
+    localStorage.setItem(getSaveKey(slot), json);
+    showSaveNotification(`💾 슬롯 ${slot} 저장 완료! (${G.date.year}년 ${G.date.month}월 ${G.date.day}일)`, 'success');
+    // Refresh save modal if open
+    const modal = document.getElementById('activeModal');
+    if(modal) { closeModal(); openSaveModal(); }
+  } catch(e) {
+    showSaveNotification('저장 실패: ' + e.message, 'danger');
+  }
+}
+
+function loadGame(slot) {
+  try {
+    const json = localStorage.getItem(getSaveKey(slot));
+    if(!json) { showSaveNotification('저장 데이터가 없습니다', 'danger'); return; }
+    const data = JSON.parse(json);
+    restoreGameFromData(data);
+    showSaveNotification(`📂 슬롯 ${slot} 불러오기 완료! (${G.date.year}년 ${G.date.month}월 ${G.date.day}일)`, '');
+    addLog(`📂 세이브 슬롯 ${slot} 불러오기`, 'success');
+  } catch(e) {
+    showSaveNotification('불러오기 실패: ' + e.message, 'danger');
+  }
+}
+
+function deleteSave(slot) {
+  localStorage.removeItem(getSaveKey(slot));
+  closeModal();
+  openSaveModal();
+  showSaveNotification(`🗑️ 슬롯 ${slot} 삭제 완료`, '');
+}
+
+function getSlotInfo(slot) {
+  try {
+    const json = localStorage.getItem(getSaveKey(slot));
+    if(!json) return null;
+    const data = JSON.parse(json);
+    return data;
+  } catch(e) { return null; }
+}
+
+function formatSavedAt(iso) {
+  try {
+    const d = new Date(iso);
+    return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  } catch(e) { return iso; }
+}
+
+function openSaveModal() {
+  const isInGame = !!(G && G.playerId);
+
+  let slotsHtml = '';
+  for(let i = 1; i <= SAVE_SLOTS; i++) {
+    const info = getSlotInfo(i);
+    if(info) {
+      const d = info.date;
+      const pf = info.factions?.[info.playerId];
+      const cityCount = Object.values(info.cities || {}).filter(c => c.owner === info.playerId).length;
+      const leader = info.generals?.[info.playerLeaderId];
+      slotsHtml += `
+        <div style="background:var(--bg-card);border:1px solid var(--border);padding:10px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
+            <div>
+              <span style="color:var(--gold);font-family:'Noto Serif KR';font-size:13px">슬롯 ${i}</span>
+              <span style="color:var(--text-dim);font-size:10px;margin-left:8px">${formatSavedAt(info.savedAt)}</span>
+            </div>
+            <button onclick="deleteSave(${i})" style="font-size:10px;padding:2px 6px;background:rgba(139,26,26,0.3);border:1px solid var(--red);color:#ff6b6b;cursor:pointer">🗑️</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;font-size:11px;margin-bottom:8px">
+            <span style="color:var(--text-dim)">주인공: <span style="color:var(--gold)">${leader?.name || '-'}</span></span>
+            <span style="color:var(--text-dim)">${d?.year}년 ${d?.month}월 ${d?.day}일</span>
+            <span style="color:var(--text-dim)">영지: <span style="color:var(--text)">${cityCount}개</span></span>
+            <span style="color:var(--text-dim)">금: <span style="color:var(--text)">${(pf?.gold||0).toLocaleString()}</span></span>
+            <span style="color:var(--text-dim)">군량: <span style="color:var(--text)">${(pf?.food||0).toLocaleString()}</span></span>
+            <span style="color:var(--text-dim)">시나리오: <span style="color:var(--text)">${info.scenarioName||'-'}</span></span>
+          </div>
+          <div style="display:flex;gap:6px">
+            ${isInGame ? `<button onclick="saveGame(${i})" style="flex:1;padding:5px;background:rgba(26,90,42,0.4);border:1px solid #2d6e2d;color:#6bff6b;cursor:pointer;font-size:11px">💾 덮어쓰기</button>` : ''}
+            <button onclick="loadGame(${i})" style="flex:1;padding:5px;background:rgba(26,58,110,0.4);border:1px solid #3a6ace;color:#7ab0ff;cursor:pointer;font-size:11px">📂 불러오기</button>
+          </div>
+        </div>
+      `;
+    } else {
+      slotsHtml += `
+        <div style="background:var(--bg-card);border:1px dashed var(--border);padding:10px;margin-bottom:8px;text-align:center">
+          <div style="color:var(--text-dim);font-size:12px;margin-bottom:8px">슬롯 ${i} — 비어있음</div>
+          ${isInGame ? `<button onclick="saveGame(${i})" style="padding:5px 20px;background:rgba(26,90,42,0.4);border:1px solid #2d6e2d;color:#6bff6b;cursor:pointer;font-size:11px">💾 새로 저장</button>` : '<span style="color:var(--text-dim);font-size:11px">저장 없음</span>'}
+        </div>
+      `;
+    }
+  }
+
+  showModal(`
+    <div class="modal-box" style="max-width:480px">
+      <div class="modal-header">${isInGame ? '💾 저장 / 불러오기' : '📂 불러오기'}
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="color:var(--text-dim);font-size:11px;margin-bottom:12px">
+          ${isInGame ? '현재 게임을 저장하거나, 이전 세이브를 불러올 수 있습니다.' : '저장된 게임을 선택하여 불러오세요.'}
+        </div>
+        ${slotsHtml}
+        <div style="font-size:10px;color:var(--text-dim);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+          ※ 저장 데이터는 브라우저 로컬 스토리지에 보관됩니다.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray" onclick="closeModal()">닫기</button>
+      </div>
+    </div>
+  `);
+}
+
+function openLoadModal() {
+  openSaveModal();
+}
+
+// Save notification (separate style from normal notifications)
+function showSaveNotification(msg, type) {
+  const el = document.createElement('div');
+  el.style.cssText = `
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:var(--bg-panel); border:1px solid ${type==='success'?'#2d6e2d':type==='danger'?'var(--red)':'var(--gold)'};
+    color:${type==='success'?'#6bff6b':type==='danger'?'#ff6b6b':'var(--text)'};
+    padding:10px 24px; z-index:900; font-size:13px;
+    box-shadow:0 0 20px rgba(0,0,0,0.8);
+    animation:slideUp 0.3s ease;
+    font-family:'Noto Sans KR',sans-serif;
+  `;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2500);
+}
+
+// Auto-save every 10 turns
+const _origNextDay = nextDay;
+// Patch nextDay to auto-save every 10 days
+(function() {
+  const _nd = window.nextDay;
+  window.nextDay = function() {
+    _nd();
+    if(G.dayCount % 10 === 0) {
+      // Auto-save to slot 0 (hidden auto-save)
+      try {
+        const data = buildSaveData();
+        localStorage.setItem(SAVE_KEY_PREFIX + 'auto', JSON.stringify(data));
+      } catch(e) {}
+    }
+  };
+})();
+
+// =============================================
+// TITLE SCREEN SAVE SECTION
+// =============================================
+function renderTitleSaveSection() {
+  const section = document.getElementById('titleSaveSection');
+  if(!section) return;
+
+  const hasSaves = checkExistingSaves();
+  const autoJson = localStorage.getItem(SAVE_KEY_PREFIX + 'auto');
+  let autoInfo = null;
+  try { if(autoJson) autoInfo = JSON.parse(autoJson); } catch(e) {}
+
+  if(!hasSaves && !autoInfo) {
+    section.innerHTML = '';
+    return;
+  }
+
+  // Find newest manual save
+  let newest = null;
+  for(let i = 1; i <= SAVE_SLOTS; i++) {
+    const info = getSlotInfo(i);
+    if(info && (!newest || new Date(info.savedAt) > new Date(newest.savedAt))) newest = info;
+  }
+
+  let html = '<div style="border-top:1px solid var(--border);padding-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center">';
+
+  if(newest) {
+    const leader = newest.generals?.[newest.playerLeaderId];
+    const d = newest.date;
+    html += `
+      <button class="scenario-btn" onclick="openSaveModal()" style="border-color:#3a6ace;background:rgba(26,58,110,0.15);flex:1;min-width:220px">
+        <span class="scenario-year" style="color:#7ab0ff">📂</span>
+        <div>
+          <div style="color:#7ab0ff">이어하기</div>
+          <div style="font-size:11px;color:var(--text-dim)">${leader?.name||'?'} · ${d?.year}년 ${d?.month}월 ${d?.day}일 · ${newest.scenarioName||''}</div>
+        </div>
+      </button>`;
+  } else if(autoInfo) {
+    const leader = autoInfo.generals?.[autoInfo.playerLeaderId];
+    const d = autoInfo.date;
+    html += `
+      <button class="scenario-btn" onclick="loadAutoSave()" style="border-color:#a06020;background:rgba(80,40,0,0.15);flex:1;min-width:220px">
+        <span class="scenario-year" style="color:#ffb84d">⚡</span>
+        <div>
+          <div style="color:#ffb84d">자동 저장 불러오기</div>
+          <div style="font-size:11px;color:var(--text-dim)">${leader?.name||'?'} · ${d?.year}년 ${d?.month}월 ${d?.day}일</div>
+        </div>
+      </button>`;
+  }
+
+  html += '</div>';
+  section.innerHTML = html;
+}
+
+function loadAutoSave() {
+  try {
+    const json = localStorage.getItem(SAVE_KEY_PREFIX + 'auto');
+    if(!json) { showSaveNotification('자동 저장 데이터가 없습니다', 'danger'); return; }
+    const data = JSON.parse(json);
+    restoreGameFromData(data);
+    showSaveNotification('⚡ 자동 저장 불러오기 완료!', '');
+  } catch(e) {
+    showSaveNotification('불러오기 실패: ' + e.message, 'danger');
+  }
+}
+
+// =============================================
+// SAVE & QUIT / RESTART CONFIRM
+// =============================================
+function confirmSaveAndQuit() {
+  showModal(`
+    <div class="modal-box" style="max-width:400px">
+      <div class="modal-header">💾 저장 후 종료
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="font-size:13px;color:var(--text);margin-bottom:15px;line-height:1.7">
+          현재 게임을 저장하고 타이틀 화면으로 돌아갑니다.<br>
+          <span style="color:var(--text-dim);font-size:11px">저장할 슬롯을 선택하세요.</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${Array.from({length: SAVE_SLOTS}, (_,i) => {
+            const info = getSlotInfo(i+1);
+            const label = info
+              ? `슬롯 ${i+1} <span style="color:var(--text-dim);font-size:10px">— ${info.generals?.[info.playerLeaderId]?.name||'?'} ${info.date?.year}년 ${info.date?.month}월 (덮어쓰기)</span>`
+              : `슬롯 ${i+1} <span style="color:var(--text-dim);font-size:10px">— 비어있음</span>`;
+            return `<button onclick="saveAndQuit(${i+1})" style="padding:8px 12px;background:rgba(26,90,42,0.3);border:1px solid #2d6e2d;color:#6bff6b;cursor:pointer;font-size:12px;text-align:left">${label}</button>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray" onclick="closeModal()">취소</button>
+      </div>
+    </div>
+  `);
+}
+
+function saveAndQuit(slot) {
+  try {
+    const data = buildSaveData();
+    localStorage.setItem(getSaveKey(slot), JSON.stringify(data));
+    closeModal();
+    showSaveNotification(`💾 슬롯 ${slot} 저장 완료! 타이틀로 돌아갑니다...`, 'success');
+    setTimeout(() => goToTitle(), 1500);
+  } catch(e) {
+    showSaveNotification('저장 실패: ' + e.message, 'danger');
+  }
+}
+
+function confirmRestart() {
+  showModal(`
+    <div class="modal-box" style="max-width:380px">
+      <div class="modal-header">🔄 처음부터
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="font-size:13px;color:var(--text);margin-bottom:6px;line-height:1.7">
+          현재 게임을 종료하고 타이틀 화면으로 돌아갑니다.
+        </div>
+        <div style="font-size:12px;color:#ff8080;background:rgba(139,26,26,0.15);border:1px solid var(--red);padding:8px;margin-top:8px">
+          ⚠️ 저장하지 않은 진행 내용은 사라집니다.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray" onclick="closeModal()">취소</button>
+        <button class="btn" onclick="saveCurrentAndGoTitle()" style="background:rgba(80,40,0,0.4);border-color:#a06020;color:#ffb84d">💾 저장하고 종료</button>
+        <button class="btn btn-primary" onclick="closeModal();goToTitle()">저장 없이 종료</button>
+      </div>
+    </div>
+  `);
+}
+
+function saveCurrentAndGoTitle() {
+  closeModal();
+  confirmSaveAndQuit();
+}
+
+function goToTitle() {
+  // Hide game, reset G minimally, show title
+  document.getElementById('gameScreen').classList.remove('active');
+  const ts = document.getElementById('titleScreen');
+  ts.style.display = 'flex';
+
+  // Restore original title content (scenario list)
+  ts.innerHTML = `
+    <div class="title-main">三國志</div>
+    <div class="title-sub">천하통일</div>
+    <div class="title-divider"></div>
+    <div style="color:var(--text-dim);font-size:13px;margin-bottom:20px;letter-spacing:3px">— 시나리오 선택 —</div>
+    <div class="scenario-list">
+      <button class="scenario-btn" onclick="startGame(0)"><span class="scenario-year">184년</span><div><div style="color:var(--gold)">황건적의 난</div><div style="font-size:11px;color:var(--text-dim)">장각의 난이 천하를 뒤흔들다. 한 왕조의 몰락이 시작된다.</div></div></button>
+      <button class="scenario-btn" onclick="startGame(1)"><span class="scenario-year">189년</span><div><div style="color:var(--gold)">동탁의 폭정</div><div style="font-size:11px;color:var(--text-dim)">동탁이 낙양을 점령하고 황제를 폐위하다. 반동탁 연합이 결성된다.</div></div></button>
+      <button class="scenario-btn" onclick="startGame(2)"><span class="scenario-year">200년</span><div><div style="color:var(--gold)">관도 대전</div><div style="font-size:11px;color:var(--text-dim)">조조와 원소의 운명을 건 대결. 천하의 패권이 결정된다.</div></div></button>
+      <button class="scenario-btn" onclick="startGame(3)"><span class="scenario-year">208년</span><div><div style="color:var(--gold)">적벽 대전</div><div style="font-size:11px;color:var(--text-dim)">조조의 남정. 오·촉 연합의 저항. 삼국정립의 기초가 세워진다.</div></div></button>
+    </div>
+    <div id="titleSaveSection" style="width:500px;margin-top:8px"></div>
+    <div style="color:var(--text-dim);font-size:11px;margin-top:14px">▼ 시나리오를 선택하면 주인공을 고를 수 있습니다</div>
+  `;
+  renderTitleSaveSection();
+}
+
+// =============================================
+// RESTORE GAME FROM DATA (shared by loadGame & loadAutoSave)
+// =============================================
+function restoreGameFromData(data) {
+  if(!data || !data.factions) throw new Error('저장 파일이 손상되었습니다');
+  G.date = data.date;
+  G.dayCount = data.dayCount || 0;
+  G.weather = data.weather || 'clear';
+  G.season = data.season || 'spring';
+  G.playerId = data.playerId;
+  G.playerLeaderId = data.playerLeaderId;
+  G.factions = data.factions;
+  G.cities = data.cities;
+  G.generals = data.generals;
+  G.armies = data.armies || [];
+  G.log = data.log || [];
+  G.selectedCity = data.selectedCity || null;
+  G.selectedGenerals = data.selectedGenerals || [];
+  G.scenario = data.scenario || { name: data.scenarioName };
+  G.events = [];
+  G.pendingEvents = [];
+  G.rumors = [];
+  G.aiActions = [];
+  closeModal();
+  document.getElementById('titleScreen').style.display = 'none';
+  document.getElementById('gameScreen').classList.add('active');
+  renderAll();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  renderTitleSaveSection();
+});
 </script>
 </body>
 </html>
